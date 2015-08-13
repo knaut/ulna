@@ -38,7 +38,7 @@
 			child.__super__ = parent.prototype;
 
 			return child;
-		};
+		}
 	};
 
 	// Events, stolen from Backbone
@@ -277,24 +277,7 @@
 			return this;
 		}
 		var length = Math.max( 0, arguments.length - 1 );
-		// var args = Array( length );
-		/*
-		a4440920:macysJS yc03760$ grunt jshint
-		Running "jshint:all" (jshint) task
-		JSHINT error in file: src/common/features/refineByFacet/lib/Events.js
-				Line: 268
-				Code: var args = Array( length );
-				Missing 'new' prefix when invoking a constructor.
-				W064
-		Fatal error: Fatal Error Stopping! Check logs at target/logs/jshint for more information.
-		Task 'jshint:all' took 22217ms
-		All tasks took 22217ms
-		*/
-		// var args = new Array( length );
-		/* 
-		Fatal error: File: src/common/features/refineByFacet/lib/Events.js contains new Array. Using Array / new Array does not follow coding standards use [] instead!
-		@_@
-		*/
+
 		var args = [];
 		args.length = 5;
 		for ( var i = 0; i < length; i++ ) {
@@ -396,7 +379,7 @@
 
 		_renderTemplate: function () {
 			var rendered = this.template;
-			rendered = rendered( this.data );
+			rendered = _.template( this.template, this.data );
 			if ( this.$el.length ) {
 				this.$el.html( rendered );
 			} else {
@@ -486,7 +469,7 @@
 		this.init.apply( this, arguments );
 	};
 
-	_.extend( Store.prototype, BackboneEvents, {
+	_.extend( Store.prototype, Ulna.Events, {
 		init: function () {
 			this.cid = _.uniqueId( 's' );
 			this.setProps( this.model );
