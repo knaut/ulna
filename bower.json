@@ -1,0 +1,24 @@
+{
+  "name": "Ulna",
+  "version": "0.0.1",
+  "authors": [
+    "knaut <info@knaut.net>"
+  ],
+  "description": "A midnight framework for single page web apps",
+  "main": "dist/ulna.js",
+  "keywords": [
+    "flux",
+    "backbone",
+    "marionette",
+    "react",
+    "amd"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
