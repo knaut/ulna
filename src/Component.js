@@ -1,3 +1,5 @@
+var extend = require('./extend');
+
 // COMPONENTS
 // Like Marionette or Backbone views, but able to be nested within a recursive tree-like hierarchy
 
@@ -218,3 +220,5 @@ _.extend(Component.prototype, {
 });
 
 Component.extend = extend;
+
+module.exports = Component;

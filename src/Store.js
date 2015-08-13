@@ -1,3 +1,6 @@
+var extend = require('./extend');
+var Events = require('./Events');
+
 // STORE
 // Store is your "model" or data layer. A store represents, and maintains, a discrete
 // piece of application or UI data. Todo: use props as static data from the server, only
@@ -18,7 +21,7 @@ var Store = function(obj) {
 	this.init.apply(this, arguments);
 };
 
-_.extend(Store.prototype, Ulna.Events, {
+_.extend(Store.prototype, Events, {
 	init: function() {
 		this.cid = _.uniqueId('s');
 		this.setProps(this.model);
@@ -155,5 +158,5 @@ _.extend(Store.prototype, Ulna.Events, {
 
 Store.extend = extend;
 
-
+module.exports = Store;
 

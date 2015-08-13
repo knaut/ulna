@@ -1,0 +1,16 @@
+{
+  "name": "Ulna",
+  "version": "0.0.1",
+  "description": "the midnight SPA framework",
+  "repository": "",
+  "author": "knaut",
+  "license": "BSD",
+  "dependencies": {
+    "grunt": "~0.4.5",
+    "jquery": "*",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "grunt-browserify": "^4.0.0"
+  }
+}

@@ -30,3 +30,5 @@ var extend = function ( protoProps, staticProps ) {
 
 	return child;
 };
+
+module.exports = extend;

@@ -1,3 +1,6 @@
+var extend = require('./extend');
+var Events = require('./Events');
+
 var Dispatcher = function(options) {
 	if (options && options.actions) {
 		if (typeof options.actions === 'string') {
@@ -12,7 +15,7 @@ var Dispatcher = function(options) {
 		value: {}
 	});
 
-	_.extend(this._actions, Ulna.Events);
+	_.extend(this._actions, Events);
 
 	this.initialize.apply(this, arguments);
 };
@@ -132,3 +135,5 @@ Dispatcher.prototype = {
 };
 
 Dispatcher.extend = extend;
+
+module.exports = Dispatcher;

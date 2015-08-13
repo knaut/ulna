@@ -1,3 +1,6 @@
+var extend = require('./extend');
+var Events = require('./Events');
+
 // ROUTER
 var Router = function(obj) {
 	this.state = {}; // current state (before set on model, posted to server)
@@ -8,7 +11,7 @@ var Router = function(obj) {
 	this.init.apply(this, arguments);
 };
 
-_.extend(Router.prototype, Ulna.Events, {
+_.extend(Router.prototype, Events, {
 	init: function() {
 		this.setState(this.state);
 		this.on('routerUpdate', this.update, this);
@@ -42,13 +45,13 @@ _.extend(Router.prototype, Ulna.Events, {
 	},
 
 	updateHistory: function(name) {
-		document.title = 'k̄nautwerk - ' + name;
+		document.title = name;
 
 		// update the history
 		history.pushState({
-			title: 'k̄nautwerk - ' + name,
+			title: name,
 			name: name
-		}, 'k̄nautwerk - ' + name, name);
+		}, name, name);
 	},
 
 	update: function() {
@@ -57,3 +60,5 @@ _.extend(Router.prototype, Ulna.Events, {
 });
 
 Router.extend = extend;
+
+module.exports = Router;

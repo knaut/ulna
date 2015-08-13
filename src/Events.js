@@ -13,7 +13,7 @@
 //     object.trigger('expand');
 //
 
-var Events = Ulna.Events = {};
+var Events = {};
 // Regular expression used to split event strings.
 var eventSplitter = /\s+/;
 // Iterates over the standard `event, callback` (as well as the fancy multiple
@@ -299,10 +299,8 @@ var triggerEvents = function(events, args) {
 // Aliases for backwards compatibility.
 Events.bind = Events.on;
 Events.unbind = Events.off;
-// Allow the `Ulna` object to serve as a global event bus, for folks who
-// want global "pubsub" in a convenient place.
-_.extend(Ulna, Events);
 
+module.exports = Events;
 
 
 
