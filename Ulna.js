@@ -1,12 +1,10 @@
 // Ulna, the midnight framework
 
-// A Backbone-style implementation of the concepts behind ReactJS and Flux.
+// A Backbone-style implementation of concepts borrowed from ReactJS and Flux.
 
 // ** your tools should work for you, not the other way around **
 
 // ----------- //
-
-(function() {
 
 	// Ulna, the global object
 	var Ulna = {
@@ -277,9 +275,8 @@
 			return this;
 		}
 		var length = Math.max( 0, arguments.length - 1 );
+		var args = Array( length );
 
-		var args = [];
-		args.length = 5;
 		for ( var i = 0; i < length; i++ ) {
 			args[ i ] = arguments[ i + 1 ];
 		}
@@ -350,7 +347,7 @@
 
 
 	// COMPONENTS
-	// Like Marionette or Backbone views, but nested within a tree-like hierarchy
+	// Like Marionette or Backbone views, but able to be nested within a recursive tree-like hierarchy
 
 	var Component = function ( obj ) {
 		this.cid = _.uniqueId( 'c' );
@@ -363,6 +360,7 @@
 	_.extend( Component.prototype, {
 		init: function () {
 			this._setup();
+
 		},
 
 		_setup: function () {
@@ -378,8 +376,12 @@
 		},
 
 		_renderTemplate: function () {
-			var rendered = this.template;
-			rendered = _.template( this.template, this.data );
+			if (this.template === undefined || !this.template) {
+				this._bindEvents();
+				return;
+			};
+			var rendered = _.template( this.template );
+			rendered = rendered( this.data );
 			if ( this.$el.length ) {
 				this.$el.html( rendered );
 			} else {
@@ -389,14 +391,31 @@
 		},
 
 		_bindEvents: function () {
+			var regex = /^(\w+)/;
 			for ( var prop in this.events ) {
-				this.$el.find( prop ).on( 'click', _.bind( this[ this.events[ prop ] ], this ) );
+				var eventString = regex.exec( prop )[0];
+				if (eventString.indexOf('key') > -1) {
+					$(document).on(eventString, _.bind( this[ this.events[ prop ] ], this ) );
+				} else {
+					var reg = /[\S]*$/;
+
+					this.$el.find( reg.exec(prop)[0] ).on( eventString, _.bind( this[ this.events[ prop ] ], this ) );
+				}
 			}
+
 		},
 
 		_unbindEvents: function () {
+			var regex = /^(\w+)/;
 			for ( var prop in this.events ) {
-				this.$el.find( prop ).off( 'click', this[ this.events[ prop ] ] );
+				var eventString = regex.exec( prop )[0];
+				if (eventString.indexOf('key') > -1) {
+					$(document).on(eventString, _.bind( this[ this.events[ prop ] ], this ) );
+				} else {
+					var reg = /[\S]*$/;
+
+					this.$el.find( reg.exec(prop)[0] ).off( eventString, _.bind( this[ this.events[ prop ] ], this ) );
+				}
 			}
 		},
 
@@ -410,18 +429,105 @@
 			return hasChild;
 		},
 
+		setComponentData: function () {
+            var props = this.store.getCurrentProps();
+            this.data = props;
+
+            // this.createChildren();
+        },
+
 		createChildren: function () {
-			for ( var i = 0; i < this.data.children.length; i++ ) {
-				var child = new this.childType( {
-					cid: this.cid + 'c' + i,
-					data: this.data.children[ i ],
-					parent: this,
-					children: []
-				} );
-				this.children.push( child );
-			}
-			this._bindChildren();
-		},
+            if ( typeof this.childType === 'object' ) {
+                for ( var i = 0; i < this.data.children.length; i++ ) {
+
+                    var Constructor = this.returnViewTypeByConfig( this.data.children[ i ] );
+
+                    var child = new Constructor( {
+                        cid: this.cid + 'c' + i,
+                        data: this.data.children[ i ],
+                        parent: this,
+                        children: []
+                    } );
+
+                    this.children.push( child );
+                }
+
+                this._bindChildren();
+
+            } else {
+                for ( var i = 0; i < this.data.children.length; i++ ) {
+
+                    var child = new this.childType( {
+                        cid: this.cid + 'c' + i,
+                        data: this.data.children[ i ],
+                        parent: this,
+                        children: []
+                    } );
+
+
+                    this.children.push( child );
+                }
+
+                this._bindChildren();
+            }
+        },
+
+        returnViewTypeByConfig: function ( node ) {
+            var viewConstructor;
+            var payload = [];
+            var viewModel = null;
+
+            // eval() workaround
+            // remember to add your views to "h" manually, otherwise they won't be recieved
+            var h = this.childType;
+            for ( var prop in this.childType ) {
+
+                // prop could be a string or another object
+                switch ( typeof this.childType[ prop ] ) {
+	                case 'string':
+	                    if ( prop.toUpperCase() === node[ 'name' ] ) {
+
+	                        viewConstructor = h[ this.childType[ prop ] ];
+
+	                    } else if ( prop === 'default' ) {
+	                        viewConstructor = h[ this.childType[ 'default' ] ];
+	                    }
+
+	                break;
+	                case 'object':
+	                    if ( prop.toUpperCase() === node[ 'name' ] ) {
+
+	                        var typeProp = this.childType[ prop ];
+
+	                        if ( typeProp.hasOwnProperty( 'type' ) ) {
+	                            viewConstructor = h[ typeProp.type ];
+	                        }
+
+	                        // in cases where we have a view model, we have to return just the constructor and the view model
+	                        if ( typeProp.hasOwnProperty( 'viewModel' ) ) {
+	                            viewModel = typeProp.viewModel;
+	                        }
+	                    }
+                    break;
+                    case 'function':
+	                    if ( prop.toLowerCase() === node[ 'name' ] ) {
+
+	                        var typeProp = this.childType[ prop ];
+
+	                        return typeProp;
+	                    }
+                    break;
+                }
+            }
+
+            // we hand back a payload that can contain either the viewConstructor,
+            // or the viewConstructor and the viewModle from the SubAppConfig
+            payload.push( viewConstructor );
+            if ( viewModel ) {
+                payload.push( viewModel );
+            }
+            return payload;
+        },
 
 		_addChild: function ( child ) {
 			this.$el.find( this.childContainer ).first().append( child.$el );
@@ -438,6 +544,20 @@
 			} );
 		},
 
+		destroy: function() {
+			if (this.children.length) {
+				for (var i = 0; this.children.length > i; i++) {
+					this.children[i].destroy();
+				}
+			}
+
+			this._unbindEvents();
+
+			this.$el.empty();
+
+			this.children = [];
+		},
+
 		startUpdate: function () {},
 
 		update: function () {},
@@ -452,7 +572,7 @@
 	// STORE
 	// Store is your "model" or data layer. A store represents, and maintains, a discrete
 	// piece of application or UI data. Todo: use props as static data from the server, only
-	// updated when about to be POSTed back to the server. 
+	// updated when about to be POSTed back to the server.
 	// State is solely data for the UI component's consumption (i.e. a "view model")
 
 	var Store = function ( obj ) {
@@ -522,9 +642,10 @@
 			for ( var prop in obj ) {
 				if ( this.model.hasOwnProperty( prop ) ) {
 					this.props[ prop ] = obj[ prop ];
-					this.trigger( 'propsSet', this.cid );
 				}
 			}
+
+			this.trigger( 'propsSet', this.cid );
 		},
 
 		setState: function ( state ) {
@@ -542,6 +663,10 @@
 			var clonedState = _.clone( this.state );
 			return clonedState;
 		},
+
+		getCurrentProps: function () {
+            return $.extend( true, {}, this.props );
+        },
 
 		shouldComponentUpdate: function ( nextState ) {
 			if ( _.isEqual( nextState, this.state ) ) {
@@ -563,11 +688,11 @@
 
 			var continueCycle;
 			( function chain( i ) {
-				
+
 				if ( i >= self._lifecycle.length || typeof self[ self._lifecycle[ i ] ] !== 'function' ) {
 					return;
 				}
-				
+
 				self._lifecycleTimeout = setTimeout( function () {
 					continueCycle = self[ self._lifecycle[ i ] ]( payload );
 					if ( !continueCycle ) {
@@ -580,16 +705,14 @@
 		},
 
 		startUpdate: function () {
-			// define your custom method 
-			// console.log( this.cid, 'startUpdate', arguments );
+			// define your custom method
 			// ensure this target obj based on the desired id
 			// if not, return false
 			return true;
 		},
 
 		onUpdate: function () {
-			// define your custom method 
-			// console.log( this.cid, 'onUpdate', arguments );
+			// define your custom method
 			// clone current state
 			// construct new state object
 			// shouldComponentUpdate( prevState, nextState )
@@ -597,13 +720,74 @@
 		},
 
 		afterUpdate: function () {
-			// console.log( this.cid, 'afterUpdate', arguments );
 			// make dispatcher calls if necessary, etc
-			// console.log( 'lifecycle finished' );
 		}
 	} );
 
 	Store.extend = Ulna.extend;
+
+	// ----------- //
+
+	// ROUTER
+	var Router = function( obj ) {
+		this.state = {}; // current state (before set on model, posted to server)
+		for ( var prop in obj ) {
+			this[ prop ] = obj[ prop ];
+		}
+
+		this.init.apply( this, arguments );
+	};
+
+	_.extend( Router.prototype, Ulna.Events, {
+		init: function() {
+			this.setState( this.state );
+			this.on('routerUpdate', this.update, this);
+			this.registerWithDispatcher();
+		},
+
+		registerWithDispatcher: function() {
+			// overrule in the constructor
+		},
+
+		getState: function ( string ) {
+			if ( this.state.hasOwnProperty( string ) ) {
+				return this.state[ string ];
+			}
+		},
+
+		setState: function ( state ) {
+			for ( var item in state ) {
+				if ( this.state.hasOwnProperty( item ) ) {
+					this.state[ item ] = state[ item ];
+					this.trigger( 'routerUpdate' );
+				} else {
+					return false;
+				}
+			}
+		},
+
+		getCurrentState: function ( state ) {
+			var clonedState = _.clone( this.state );
+			return clonedState;
+		},
+
+		updateHistory: function( name ) {
+			document.title = 'k̄nautwerk - ' + name;
+
+			// update the history
+			history.pushState({
+				title: 'k̄nautwerk - ' + name,
+				name: name
+			}, 'k̄nautwerk - ' + name, name );
+		},
+
+		update: function() {
+
+		}
+	});
+
+	Router.extend = Ulna.extend;
+
 
 	// ----------- //
 
@@ -749,15 +933,4 @@
 	Ulna.Dispatcher = Dispatcher;
 	Ulna.Component = Component;
 	Ulna.Store = Store;
-
-	return Ulna;
-
-})();
-
-
-
-
-
-
-
-
+	Ulna.Router = Router;
