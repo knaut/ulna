@@ -11,11 +11,12 @@ var Router = require('./Router');
 // ** your tools should work for you, not the other way around **
 
 // CORE
-// create a singleton object to collect all our pieces
+// create a singleton object to collect all our pieces,
+// then expose that in the browser
 
 var Ulna = {};
 
-// Allow the `Ulna` object to serve as a global event bus, for folks who
+// Allow the `Ulna` object to serve as a global event bus for folks who
 // want global "pubsub" in a convenient place.
 _.extend(Ulna, Events);
 

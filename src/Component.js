@@ -4,12 +4,51 @@ var extend = require('./extend');
 // Like Marionette or Backbone views, but able to be nested within a recursive tree-like hierarchy
 
 var Component = function(obj) {
+	// this.children = [];
+	// this.childContainer = null;
+	// this.childType = 'any';
+	// this.template = undefined;
+	
 	this.cid = _.uniqueId('c');
 	for (var prop in obj) {
 		this[prop] = obj[prop];
 	}
 	this.init.apply(this, arguments);
 };
+
+/*
+{
+	initialize,		// all initial bootstrapping
+	deinitialize,	// deconstruction, unbinding, clearing of children, etc.
+
+	addId,			// add this unique id to the $el (unused)
+	render,			// take store's props, components template, and produce an $el
+
+	bindEvents,		// bind events based on events hash
+	unbindEvents,	// unbind events in hash
+
+	hasChildBasedOnId,	// checks if this component has a child that matches the passed cid
+	createChildren,		// populates children based on data
+	getChildByType,		// dynamically loads components based on childType property, whether string or object
+
+	startUpdate,		// anything to do before updating
+	update,				// updating the DOM based on store's updated state
+	afterUpdate,		// post-update tasks, if any
+}
+*/
+
+/*
+todos:
+refine the way components create/destroy their children
+refine the way components create/destroy dom elements (fade in/out animations)
+
+refine way components initialize and deinitialize (for developer use of use)
+
+?lifecycle updating for components*
+?still use component.data, or switch to props?
+
+suite of explicit events that define the relationship between store, component
+*/
 
 _.extend(Component.prototype, {
 	init: function() {
