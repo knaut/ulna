@@ -8,14 +8,19 @@ var Router = function(obj) {
 		this[prop] = obj[prop];
 	}
 
-	this.init.apply(this, arguments);
+	this.initialize.apply(this, arguments);
 };
 
 _.extend(Router.prototype, Events, {
-	init: function() {
+	initialize: function() {
 		this.setState(this.state);
 		this.on('routerUpdate', this.update, this);
 		this.registerWithDispatcher();
+	},
+
+	deinitialize: function() {
+		this.off('routerUpdate', this.update, this);
+		// this.unregisterWithDispatcher();	// is a function like this needed?
 	},
 
 	registerWithDispatcher: function() {

@@ -8,17 +8,20 @@ var Events = require('./Events');
 // State is solely data for the UI component's consumption (i.e. a "view model")
 
 var Store = function(obj) {
-	this._lifecycle = ['startUpdate', 'onUpdate', 'afterUpdate'];
+	this._lifecycle = ['beforeUpdate', 'onUpdate', 'afterUpdate'];
 	this._lifecycleTimeout = true;
+	
 	// imagine the store as a model/state universe that intakes data
 	// from the server, constructs an updated view data obj, and then sets it on the view
 	this.model = {};
 	this.props = {}; // the response from the server (parsed), in other words static data
 	this.state = {}; // current state (before set on model, posted to server)
+	
 	for (var prop in obj) {
 		this[prop] = obj[prop];
 	}
-	this.init.apply(this, arguments);
+	
+	this.initialize.apply(this, arguments);
 };
 
 /*
@@ -49,20 +52,31 @@ var Store = function(obj) {
 */
 
 _.extend(Store.prototype, Events, {
-	init: function() {
-		this.cid = _.uniqueId('s');
+	initialize: function() {
+		this.id = _.uniqueId('s');
 		this.setProps(this.model);
+
 		// initial state from constructor args
 		this.setState(this.state);
 		this.bindInternals();
 		this.registerWithDispatcher();
-		// this._startLifecycle( );
+	},
+
+	deinitialize: function() {
+		this.unbindInternals();
+		// this.unregisterWithDispatcher(); 	// is a function like this needed?
 	},
 
 	bindInternals: function() {
 		// this.on('setState', this.setState, this);
-		this.on('startLifecycle', this._startLifecycle, this);
+		this.on('startUpdate', this.startUpdate, this);
 		this.on('shouldComponentUpdate', this.shouldComponentUpdate, this);
+	},
+
+	unbindInternals: function() {
+		// this.on('setState', this.setState, this);
+		this.off('startUpdate', this.startUpdate, this);
+		this.off('shouldComponentUpdate', this.shouldComponentUpdate, this);
 	},
 
 	registerWithDispatcher: function() {
@@ -137,7 +151,7 @@ _.extend(Store.prototype, Events, {
 		}
 	},
 
-	_startLifecycle: function() {
+	startUpdate: function() {
 		var payload = arguments;
 		var self = this;
 
@@ -163,7 +177,7 @@ _.extend(Store.prototype, Events, {
 		})(0);
 	},
 
-	startUpdate: function() {
+	beforeUpdate: function() {
 		// define your custom method
 		// ensure this target obj based on the desired id
 		// if not, return false

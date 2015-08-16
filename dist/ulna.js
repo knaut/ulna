@@ -5,47 +5,133 @@ var extend = require('./extend');
 // Like Marionette or Backbone views, but able to be nested within a recursive tree-like hierarchy
 
 var Component = function(obj) {
-	this.cid = _.uniqueId('c');
+	this._lifecycle = ['beforeUpdate', 'onUpdate', 'afterUpdate'];
+	this._lifecycleTimeout = true;
+
+	// this.$el = null;
+	// this.store = null;
+	this.children = [];
+	// this.childContainer = null;
+	// this.childType = null;
+	// this.template = null;
+	// this.events = null;
+	// this.data = {};
+
+	// use defaults
+
+	this.id = _.uniqueId('c');
+
 	for (var prop in obj) {
+		// console.log(prop, obj);
 		this[prop] = obj[prop];
 	}
-	this.init.apply(this, arguments);
+
+	this.initialize.apply(this, arguments);
 };
 
-_.extend(Component.prototype, {
-	init: function() {
-		this._setup();
+var proto = {
+	initialize: function() {
+		this.setStore();
 
-	},
+		if (typeof this.$el === 'string') {
+			console.log('$el supplied:', this.$el)
+			this.$el = $(this.$el);
 
-	_setup: function() {
-		this.$el = $(this.$el);
-		this._renderTemplate();
+			if (this.template) {
+				console.log('template supplied, rendering')
+				this.render();
+			}
+		} else {
+			// if we haven't supplied an $el, we're probably populating children
+			console.log('no template, rendering as child')
+			this.renderAsChild();
+		}
+
+		if (this.store) {
+			this.bindInternals();
+		}
+	
 		if (this.data.hasOwnProperty('children')) {
 			this.createChildren();
 		}
-	},
 
-	_addCid: function($el) {
-		$el.attr('data-cid', this.cid);
-	},
-
-	_renderTemplate: function() {
-		if (this.template === undefined || !this.template) {
-			this._bindEvents();
-			return;
-		};
-		var rendered = _.template(this.template);
-		rendered = rendered(this.data);
-		if (this.$el.length) {
-			this.$el.html(rendered);
-		} else {
-			this.$el = rendered;
+		if (this.events) {
+			this.bindEvents();
 		}
-		this._bindEvents();
+	},
+	deinitialize: function() {
+		if (this.store) {
+			this.store.deinitialize();
+		}
+
+		if (this.data.hasOwnProperty('children')) {
+			this.destroyChildren();
+		}
+
+		this.unrender();
 	},
 
-	_bindEvents: function() {
+	setStore: function() {
+		// meant to be overriden
+		// stores may not always be needed for a component
+		// you can overrule this function to set your store during initialization
+		return false;
+	},
+	setComponentData: function() {
+		if (this.store) {
+			this.data = this.store.getCurrentProps();
+
+		} else {
+			// console.log('Warning: setComponentData fired, but no store to get props from')
+		}
+	},
+
+	render: function() {
+		var template = _.template( this.template );
+		template = template( this.data );
+
+		this.$el.css({
+			visibility: 'hidden'	// hide any incoming html first, use showElement to unhide
+		});
+		this.$el.html( template );
+		this.showElement();
+	},
+
+	renderAsChild: function() {
+		console.log(this.data)
+		var template = _.template( this.template );
+		template = template( this.data );
+
+		this.$el = $( template );
+		console.log(this.$el[0])
+	},
+
+	showElement: function() {
+		this.$el.fadeIn(); 
+		this.$el.css({
+			visibility: 'visible'
+		});
+	},
+
+	unrender: function() {
+		// place to do fadeout animations
+		// this may need a queue to do things properly
+		this.$el.fadeOut();
+		this.$el.css({
+			visibility: hidden
+		});
+		this.$el.empty();
+	},
+
+	// internal events only, like componentUpdate and propsSet
+	bindInternals: function() {
+		this.store.on( 'componentUpdate', this.startUpdate, this );
+	},
+	unbindInternals: function() {
+		this.store.off( 'componentUpdate', this.startUpdate, this );
+	},
+
+	bindEvents: function() {
 		var regex = /^(\w+)/;
 		for (var prop in this.events) {
 			var eventString = regex.exec(prop)[0];
@@ -57,15 +143,13 @@ _.extend(Component.prototype, {
 				this.$el.find(reg.exec(prop)[0]).on(eventString, _.bind(this[this.events[prop]], this));
 			}
 		}
-
 	},
-
-	_unbindEvents: function() {
+	unbindEvents: function() {
 		var regex = /^(\w+)/;
 		for (var prop in this.events) {
 			var eventString = regex.exec(prop)[0];
 			if (eventString.indexOf('key') > -1) {
-				$(document).on(eventString, _.bind(this[this.events[prop]], this));
+				$(document).off(eventString, _.bind(this[this.events[prop]], this));
 			} else {
 				var reg = /[\S]*$/;
 
@@ -74,7 +158,7 @@ _.extend(Component.prototype, {
 		}
 	},
 
-	ensureThisHasChildBasedOnCid: function(cid) {
+	hasChildBasedOnId: function() {
 		var hasChild = false;
 		$.each(this.children, function() {
 			if (this.cid === cid) {
@@ -83,146 +167,444 @@ _.extend(Component.prototype, {
 		}, this);
 		return hasChild;
 	},
+	getChildByType: function( node ) {
+		// iterate over this.childType, returning the necessary constructor references
+		// based on the 'name' of the current prop's child node
+		/* 
+		i.e. sample props:
+		
+		children : [
+			{ name: 'myChildType',
+			  data: 'some data'},
+			{ name: 'otherChildType'
+			  data: 'other data' }
+		]
 
-	setComponentData: function() {
-		var props = this.store.getCurrentProps();
-		this.data = props;
+		in your constructor:
 
-		// this.createChildren();
+		childType: {
+			myChildType: myChildType	// the first is a key (string), the second is your require() reference
+			otherChildType: otherChildType
+		}
+		*/
+
+		// console.log(this.childType, node)
+
+		// would be nice to have the node keys dynamically set by the developer
+		for (var prop in this.childType) {
+			if (prop === node.name) {
+				return this.childType[prop];
+			}
+		}
+
+
+
+		// var childConstructor = null;
+
+		// // var hash = this.childType;	// eval() workaround
+		// console.log(hash)
+
+		// // for (var prop in this.childType) {
+
+		// 	console.log(this.childType[prop], node)
+
+		// // 	switch (typeof this.childType) {
+		// // 		case 'string':
+					
+		// 			console.log('string', prop)
+		// // 			if ( prop.toUpperCase() === node['name'] ) {
+						
+		// 				console.log(hash[this.childType[prop]])
+		// // 				childConstructor = hash[this.childType[prop]];
+		// // 			} else if ( prop === 'default' ) {
+
+		// 				console.log(hash[this.childType['default']]);
+		// // 				childConstructor = hash[this.childType['default']];
+		// // 			}
+
+		// // 			// need to add a case for 'any' keyword
+
+		// // 		break;
+		// // 		case 'object':
+
+		// 			console.log('object', prop, node['name']);
+		// // 			if ( prop === node['name'] ) {
+		// // 				var typeProp = this.childType[prop];
+		// // 				childConstructor = hash[typeProp.type]
+		// // 			}
+
+		// // 		break;
+		// // 	}
+		
+		// // }
+		// console.log(childConstructor)
+		// // return childConstructor;
+	},
+
+	getTemplate: function() {
+		// look for a 'type' property associated with a given child node
+		// if the type matches a template's key in an object hash, we return that template
+		// if not, we just pass the template as normal
+		if (typeof this.template === 'object') {
+
+			if ( Object.keys(this.data).length === 1 ) {
+				// only one key, we've just inited with no real data
+				return this.template.default;
+			} else {
+
+				for ( var prop in this.template ) {
+					if ( prop === this.data.type ) {
+						return this.template[prop]
+					}
+				}
+			}
+		} else {
+			return this.template;
+		}
 	},
 
 	createChildren: function() {
-		if (typeof this.childType === 'object') {
-			for (var i = 0; i < this.data.children.length; i++) {
-
-				var Constructor = this.returnViewTypeByConfig(this.data.children[i]);
+		console.log('createChildren', this);
+		for (var i = 0; i < this.data.children.length; i++) {
+			if (typeof this.childType === 'object') {
+				var Constructor = this.getChildByType(this.data.children[i]);
 
 				var child = new Constructor({
-					cid: this.cid + 'c' + i,
+					id: this.id + 'c' + i,
 					data: this.data.children[i],
-					parent: this,
-					children: []
+					parent: this
 				});
-
-				this.children.push(child);
-			}
-
-			this._bindChildren();
-
-		} else {
-			for (var i = 0; i < this.data.children.length; i++) {
-
+			} else {
 				var child = new this.childType({
-					cid: this.cid + 'c' + i,
+					id: this.id + 'c' + i,
 					data: this.data.children[i],
 					parent: this,
-					children: []
 				});
-
-
-				this.children.push(child);
 			}
 
-			this._bindChildren();
+			this.addChild( child );
 		}
 	},
 
-	returnViewTypeByConfig: function(node) {
-		var viewConstructor;
-		var payload = [];
-		var viewModel = null;
-
-		// eval() workaround
-		// remember to add your views to "h" manually, otherwise they won't be recieved
-		var h = this.childType;
-		for (var prop in this.childType) {
-
-			// prop could be a string or another object
-			switch (typeof this.childType[prop]) {
-				case 'string':
-					if (prop.toUpperCase() === node['name']) {
-
-						viewConstructor = h[this.childType[prop]];
-
-					} else if (prop === 'default') {
-						viewConstructor = h[this.childType['default']];
-					}
-
-					break;
-				case 'object':
-					if (prop.toUpperCase() === node['name']) {
-
-						var typeProp = this.childType[prop];
-
-						if (typeProp.hasOwnProperty('type')) {
-							viewConstructor = h[typeProp.type];
-						}
-
-						// in cases where we have a view model, we have to return just the constructor and the view model
-						if (typeProp.hasOwnProperty('viewModel')) {
-							viewModel = typeProp.viewModel;
-						}
-					}
-					break;
-				case 'function':
-					if (prop.toLowerCase() === node['name']) {
-
-						var typeProp = this.childType[prop];
-
-						return typeProp;
-					}
-					break;
-			}
-		}
-
-		// we hand back a payload that can contain either the viewConstructor,
-		// or the viewConstructor and the viewModle from the SubAppConfig
-		payload.push(viewConstructor);
-		if (viewModel) {
-			payload.push(viewModel);
-		}
-		return payload;
-	},
-
-	_addChild: function(child) {
-		this.$el.find(this.childContainer).first().append(child.$el);
-	},
-
-	_bindChildren: function() {
-		var $children = this.$el.find(this.childContainer).first().children();
-		var self = this;
-		var i = 0;
-		$children.each(function() {
-			self.children[i].$el = $(this);
-			self.children[i]._bindEvents();
-			i++;
-		});
-	},
-
-	destroy: function() {
+	destroyChildren: function() {
 		if (this.children.length) {
-			for (var i = 0; this.children.length > i; i++) {
-				this.children[i].destroy();
-			}
+
+			$.each(this.children, function(index, child) {
+				console.log('destroyChildren:', child);
+				child.deinitialize();
+			});
+
+			this.children = [];
 		}
-
-		this._unbindEvents();
-
-		this.$el.empty();
-
-		this.children = [];
 	},
 
-	startUpdate: function() {},
+	addChild: function(child) {
+		if (this.childContainer) {
+			this.$el.find( this.childContainer ).first().append( child.$el );
+		} else {
+			this.$el.append( child.$el );
+		}
 
-	update: function() {},
+		this.children.push( child );
+		console.log('addChild', child);
+	},
 
-	afterUpdate: function() {}
-});
+	// getChildEl: function() {
+	// 	if (this.childContainer) {
+	// 		return this.$el.selector + ' ' + this.childContainer;
+	// 	} else {
+	// 		return this.$el
+	// 	}
+	// }
+
+	startUpdate: function() {
+		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
+		var self = this;
+		if (self._lifecycle.length <= 0) {
+			return;
+		}
+
+		var continueCycle;
+		(function chain(i) {
+
+			if (i >= self._lifecycle.length || typeof self[self._lifecycle[i]] !== 'function') {
+				return;
+			}
+
+			self._lifecycleTimeout = setTimeout(function() {
+				continueCycle = self[self._lifecycle[i]](payload);
+				if (!continueCycle) {
+					return;
+				}
+				chain(i + 1);
+			}, 0);
+
+		})(0);
+	},
+
+	beforeUpdate: function() {
+		return true;
+	},
+	onUpdate: function() {
+		return true;
+	},
+	afterUpdate: function() {
+
+	}
+}
+
+/*
+{
+	initialize,		// all initial bootstrapping
+	deinitialize,	// deconstruction, unbinding, clearing of children, etc.
+
+	//addId,			// add this unique id to the $el (unused)
+	render,				// take store's props, components template, and produce an $el
+	getTemplate,		// 
+
+	bindEvents,		// bind events based on events hash
+	unbindEvents,	// unbind events in hash
+
+	hasChildBasedOnId,	// checks if this component has a child that matches the passed cid
+	createChildren,		// populates children based on data
+	getChildByType,		// dynamically loads components based on childType property, whether string or object
+
+	startUpdate,		// start the lifecycle update queue
+
+	beforeUpdate,		// anything to do before updating
+	update,				// updating the DOM based on store's updated state
+	afterUpdate,		// post-update tasks, if any
+}
+*/
+
+/*
+todos:
+refine the way components create/destroy their children
+refine the way components create/destroy dom elements (fade in/out animations)
+
+refine way components initialize and deinitialize (for developer use of use)
+
+?lifecycle updating for components*
+?still use component.data, or switch to props?
+
+suite of explicit events that define the relationship between store, component
+*/
+
+// var oldsrc = {
+// 	init: function() {
+// 		this._setup();
+
+// 	},
+
+// 	_setup: function() {
+// 		this.$el = $(this.$el);
+// 		this._renderTemplate();
+// 		if (this.data.hasOwnProperty('children')) {
+// 			this.createChildren();
+// 		}
+// 	},
+
+// 	_addCid: function($el) {
+// 		$el.attr('data-cid', this.cid);
+// 	},
+
+// 	_renderTemplate: function() {
+// 		if (this.template === undefined || !this.template) {
+// 			this._bindEvents();
+// 			return;
+// 		};
+// 		var rendered = _.template(this.template);
+// 		rendered = rendered(this.data);
+// 		if (this.$el.length) {
+// 			this.$el.html(rendered);
+// 		} else {
+// 			this.$el = rendered;
+// 		}
+// 		this._bindEvents();
+// 	},
+
+// 	_bindEvents: function() {
+// 		var regex = /^(\w+)/;
+// 		for (var prop in this.events) {
+// 			var eventString = regex.exec(prop)[0];
+// 			if (eventString.indexOf('key') > -1) {
+// 				$(document).on(eventString, _.bind(this[this.events[prop]], this));
+// 			} else {
+// 				var reg = /[\S]*$/;
+
+// 				this.$el.find(reg.exec(prop)[0]).on(eventString, _.bind(this[this.events[prop]], this));
+// 			}
+// 		}
+
+// 	},
+
+// 	_unbindEvents: function() {
+// 		var regex = /^(\w+)/;
+// 		for (var prop in this.events) {
+// 			var eventString = regex.exec(prop)[0];
+// 			if (eventString.indexOf('key') > -1) {
+// 				$(document).off(eventString, _.bind(this[this.events[prop]], this));
+// 			} else {
+// 				var reg = /[\S]*$/;
+
+// 				this.$el.find(reg.exec(prop)[0]).off(eventString, _.bind(this[this.events[prop]], this));
+// 			}
+// 		}
+// 	},
+
+// 	ensureThisHasChildBasedOnCid: function(cid) {
+// 		var hasChild = false;
+// 		$.each(this.children, function() {
+// 			if (this.cid === cid) {
+// 				hasChild = true;
+// 			}
+// 		}, this);
+// 		return hasChild;
+// 	},
+
+// 	setComponentData: function() {
+// 		var props = this.store.getCurrentProps();
+// 		this.data = props;
+
+// 		// this.createChildren();
+// 	},
+
+// 	createChildren: function() {
+// 		if (typeof this.childType === 'object') {
+// 			for (var i = 0; i < this.data.children.length; i++) {
+
+// 				var Constructor = this.returnViewTypeByConfig(this.data.children[i]);
+
+// 				var child = new Constructor({
+// 					cid: this.cid + 'c' + i,
+// 					data: this.data.children[i],
+// 					parent: this,
+// 					children: []
+// 				});
+
+// 				this.children.push(child);
+// 			}
+
+// 			this._bindChildren();
+
+// 		} else {
+// 			for (var i = 0; i < this.data.children.length; i++) {
+
+// 				var child = new this.childType({
+// 					cid: this.cid + 'c' + i,
+// 					data: this.data.children[i],
+// 					parent: this,
+// 					children: []
+// 				});
+
+
+// 				this.children.push(child);
+// 			}
+
+// 			this._bindChildren();
+// 		}
+// 	},
+
+// 	returnViewTypeByConfig: function(node) {
+// 		var viewConstructor;
+// 		var payload = [];
+// 		var viewModel = null;
+
+// 		// eval() workaround
+// 		// remember to add your views to "h" manually, otherwise they won't be recieved
+// 		var h = this.childType;
+// 		for (var prop in this.childType) {
+
+// 			// prop could be a string or another object
+// 			switch (typeof this.childType[prop]) {
+// 				case 'string':
+// 					if (prop.toUpperCase() === node['name']) {
+
+// 						viewConstructor = h[this.childType[prop]];
+
+// 					} else if (prop === 'default') {
+// 						viewConstructor = h[this.childType['default']];
+// 					}
+
+// 					break;
+// 				case 'object':
+// 					if (prop.toUpperCase() === node['name']) {
+
+// 						var typeProp = this.childType[prop];
+
+// 						if (typeProp.hasOwnProperty('type')) {
+// 							viewConstructor = h[typeProp.type];
+// 						}
+
+// 						// in cases where we have a view model, we have to return just the constructor and the view model
+// 						if (typeProp.hasOwnProperty('viewModel')) {
+// 							viewModel = typeProp.viewModel;
+// 						}
+// 					}
+// 					break;
+// 				case 'function':
+// 					if (prop.toLowerCase() === node['name']) {
+
+// 						var typeProp = this.childType[prop];
+
+// 						return typeProp;
+// 					}
+// 					break;
+// 			}
+// 		}
+
+// 		// we hand back a payload that can contain either the viewConstructor,
+// 		// or the viewConstructor and the viewModle from the SubAppConfig
+// 		payload.push(viewConstructor);
+// 		if (viewModel) {
+// 			payload.push(viewModel);
+// 		}
+// 		return payload;
+// 	},
+
+// 	_addChild: function(child) {
+// 		this.$el.find(this.childContainer).first().append(child.$el);
+// 	},
+
+// 	_bindChildren: function() {
+// 		var $children = this.$el.find(this.childContainer).first().children();
+// 		var self = this;
+// 		var i = 0;
+// 		$children.each(function() {
+// 			self.children[i].$el = $(this);
+// 			self.children[i]._bindEvents();
+// 			i++;
+// 		});
+// 	},
+
+// 	destroy: function() {
+// 		if (this.children.length) {
+// 			for (var i = 0; this.children.length > i; i++) {
+// 				this.children[i].destroy();
+// 			}
+// 		}
+
+// 		this._unbindEvents();
+
+// 		this.$el.empty();
+
+// 		this.children = [];
+// 	},
+
+// 	startUpdate: function() {},
+
+// 	update: function() {},
+
+// 	afterUpdate: function() {}
+// };
+
+_.extend(Component.prototype, proto);
 
 Component.extend = extend;
 
 module.exports = Component;
+
+
 },{"./extend":7}],2:[function(require,module,exports){
 var extend = require('./extend');
 var Events = require('./Events');
@@ -382,6 +764,7 @@ module.exports = Dispatcher;
 var Events = {};
 // Regular expression used to split event strings.
 var eventSplitter = /\s+/;
+
 // Iterates over the standard `event, callback` (as well as the fancy multiple
 // space-separated events `"change blur", callback` and jQuery-style event
 // maps `{event: callback}`), reducing them by manipulating `memo`.
@@ -392,9 +775,7 @@ var eventsApi = function(iteratee, memo, name, callback, opts) {
 		names;
 	if (name && typeof name === 'object') {
 		// Handle event maps.
-		if (callback !== void 0 && 'context' in opts && opts.context === void 0) {
-			opts.context = callback;
-		}
+		if (callback !== void 0 && 'context' in opts && opts.context === void 0) opts.context = callback;
 		for (names = _.keys(name); i < names.length; i++) {
 			memo = iteratee(memo, names[i], name[names[i]], opts);
 		}
@@ -408,11 +789,13 @@ var eventsApi = function(iteratee, memo, name, callback, opts) {
 	}
 	return memo;
 };
+
 // Bind an event to a `callback` function. Passing `"all"` will bind
 // the callback to all events fired.
 Events.on = function(name, callback, context) {
 	return internalOn(this, name, callback, context);
 };
+
 // An internal use `on` function, used to guard the `listening` argument from
 // the public API.
 var internalOn = function(obj, name, callback, context, listening) {
@@ -421,21 +804,23 @@ var internalOn = function(obj, name, callback, context, listening) {
 		ctx: obj,
 		listening: listening
 	});
+
 	if (listening) {
 		var listeners = obj._listeners || (obj._listeners = {});
 		listeners[listening.id] = listening;
 	}
+
 	return obj;
 };
+
 // Inversion-of-control versions of `on`. Tell *this* object to listen to
 // an event in another object... keeping track of what it's listening to.
 Events.listenTo = function(obj, name, callback) {
-	if (!obj) {
-		return this;
-	}
+	if (!obj) return this;
 	var id = obj._listenId || (obj._listenId = _.uniqueId('l'));
 	var listeningTo = this._listeningTo || (this._listeningTo = {});
 	var listening = listeningTo[id];
+
 	// This object is not listening to any other events on `obj` yet.
 	// Setup the necessary references to track the listening callbacks.
 	if (!listening) {
@@ -448,10 +833,12 @@ Events.listenTo = function(obj, name, callback) {
 			count: 0
 		};
 	}
+
 	// Bind callbacks on obj, and keep track of them on listening.
 	internalOn(obj, name, callback, this, listening);
 	return this;
 };
+
 // The reducing API that adds a callback to the `events` object.
 var onApi = function(events, name, callback, options) {
 	if (callback) {
@@ -459,9 +846,8 @@ var onApi = function(events, name, callback, options) {
 		var context = options.context,
 			ctx = options.ctx,
 			listening = options.listening;
-		if (listening) {
-			listening.count++;
-		}
+		if (listening) listening.count++;
+
 		handlers.push({
 			callback: callback,
 			context: context,
@@ -471,52 +857,52 @@ var onApi = function(events, name, callback, options) {
 	}
 	return events;
 };
+
 // Remove one or many callbacks. If `context` is null, removes all
 // callbacks with that function. If `callback` is null, removes all
 // callbacks for the event. If `name` is null, removes all bound
 // callbacks for all events.
 Events.off = function(name, callback, context) {
-	if (!this._events) {
-		return this;
-	}
+	if (!this._events) return this;
 	this._events = eventsApi(offApi, this._events, name, callback, {
 		context: context,
 		listeners: this._listeners
 	});
 	return this;
 };
+
 // Tell this object to stop listening to either specific events ... or
 // to every object it's currently listening to.
 Events.stopListening = function(obj, name, callback) {
 	var listeningTo = this._listeningTo;
-	if (!listeningTo) {
-		return this;
-	}
+	if (!listeningTo) return this;
+
 	var ids = obj ? [obj._listenId] : _.keys(listeningTo);
+
 	for (var i = 0; i < ids.length; i++) {
 		var listening = listeningTo[ids[i]];
+
 		// If listening doesn't exist, this object is not currently
 		// listening to obj. Break out early.
-		if (!listening) {
-			break;
-		}
+		if (!listening) break;
+
 		listening.obj.off(name, callback, this);
 	}
-	if (_.isEmpty(listeningTo)) {
-		this._listeningTo = void 0;
-	}
+	if (_.isEmpty(listeningTo)) this._listeningTo = void 0;
+
 	return this;
 };
+
 // The reducing API that removes a callback from the `events` object.
 var offApi = function(events, name, callback, options) {
 	// No events to consider.
-	if (!events) {
-		return;
-	}
+	if (!events) return;
+
 	var i = 0,
 		listening;
 	var context = options.context,
 		listeners = options.listeners;
+
 	// Delete all events listeners and "drop" events.
 	if (!name && !callback && !context) {
 		var ids = _.keys(listeners);
@@ -527,14 +913,15 @@ var offApi = function(events, name, callback, options) {
 		}
 		return;
 	}
+
 	var names = name ? [name] : _.keys(events);
 	for (; i < names.length; i++) {
 		name = names[i];
 		var handlers = events[name];
+
 		// Bail out if there are no events stored.
-		if (!handlers) {
-			break;
-		}
+		if (!handlers) break;
+
 		// Replace events if there are any remaining.  Otherwise, clean up.
 		var remaining = [];
 		for (var j = 0; j < handlers.length; j++) {
@@ -553,6 +940,7 @@ var offApi = function(events, name, callback, options) {
 				}
 			}
 		}
+
 		// Update tail event if the list has any events.  Otherwise, clean up.
 		if (remaining.length) {
 			events[name] = remaining;
@@ -560,10 +948,9 @@ var offApi = function(events, name, callback, options) {
 			delete events[name];
 		}
 	}
-	if (_.size(events)) {
-		return events;
-	}
+	if (_.size(events)) return events;
 };
+
 // Bind an event to only be triggered a single time. After the first time
 // the callback is invoked, it will be removed. When multiple events are
 // passed in using the space-separated syntax, the event will fire once for every
@@ -573,12 +960,14 @@ Events.once = function(name, callback, context) {
 	var events = eventsApi(onceMap, {}, name, callback, _.bind(this.off, this));
 	return this.on(events, void 0, context);
 };
+
 // Inversion-of-control versions of `once`.
 Events.listenToOnce = function(obj, name, callback) {
 	// Map the event into a `{event: once}` object.
 	var events = eventsApi(onceMap, {}, name, callback, _.bind(this.stopListening, this, obj));
 	return this.listenTo(obj, events);
 };
+
 // Reduces the event callbacks into a map of `{event: onceWrapper}`.
 // `offer` unbinds the `onceWrapper` after it has been called.
 var onceMap = function(map, name, callback, offer) {
@@ -591,43 +980,37 @@ var onceMap = function(map, name, callback, offer) {
 	}
 	return map;
 };
+
 // Trigger one or many events, firing all bound callbacks. Callbacks are
 // passed the same arguments as `trigger` is, apart from the event name
 // (unless you're listening on `"all"`, which will cause your callback to
 // receive the true name of the event as the first argument).
 Events.trigger = function(name) {
-	if (!this._events) {
-		return this;
-	}
+	if (!this._events) return this;
+
 	var length = Math.max(0, arguments.length - 1);
 	var args = Array(length);
+	for (var i = 0; i < length; i++) args[i] = arguments[i + 1];
 
-	for (var i = 0; i < length; i++) {
-		args[i] = arguments[i + 1];
-	}
 	eventsApi(triggerApi, this._events, name, void 0, args);
 	return this;
 };
+
 // Handles triggering the appropriate event callbacks.
 var triggerApi = function(objEvents, name, cb, args) {
 	if (objEvents) {
 		var events = objEvents[name];
 		var allEvents = objEvents.all;
-		if (events && allEvents) {
-			allEvents = allEvents.slice();
-		}
-		if (events) {
-			triggerEvents(events, args);
-		}
-		if (allEvents) {
-			triggerEvents(allEvents, [name].concat(args));
-		}
+		if (events && allEvents) allEvents = allEvents.slice();
+		if (events) triggerEvents(events, args);
+		if (allEvents) triggerEvents(allEvents, [name].concat(args));
 	}
 	return objEvents;
 };
+
 // A difficult-to-believe, but optimized internal dispatch function for
 // triggering events. Tries to keep the usual cases speedy (most internal
-// Ulna events have 3 arguments).
+// Backbone events have 3 arguments).
 var triggerEvents = function(events, args) {
 	var ev, i = -1,
 		l = events.length,
@@ -636,44 +1019,28 @@ var triggerEvents = function(events, args) {
 		a3 = args[2];
 	switch (args.length) {
 		case 0:
-			while (++i < l) {
-				(ev = events[i]).callback.call(ev.ctx);
-			}
+			while (++i < l)(ev = events[i]).callback.call(ev.ctx);
 			return;
 		case 1:
-			while (++i < l) {
-				(ev = events[i]).callback.call(ev.ctx, a1);
-			}
+			while (++i < l)(ev = events[i]).callback.call(ev.ctx, a1);
 			return;
 		case 2:
-			while (++i < l) {
-				(ev = events[i]).callback.call(ev.ctx, a1, a2);
-			}
+			while (++i < l)(ev = events[i]).callback.call(ev.ctx, a1, a2);
 			return;
 		case 3:
-			while (++i < l) {
-				(ev = events[i]).callback.call(ev.ctx, a1, a2, a3);
-			}
+			while (++i < l)(ev = events[i]).callback.call(ev.ctx, a1, a2, a3);
 			return;
 		default:
-			while (++i < l) {
-				(ev = events[i]).callback.apply(ev.ctx, args);
-			}
+			while (++i < l)(ev = events[i]).callback.apply(ev.ctx, args);
 			return;
 	}
 };
+
 // Aliases for backwards compatibility.
 Events.bind = Events.on;
 Events.unbind = Events.off;
 
 module.exports = Events;
-
-
-
-
-
-
-
 },{}],4:[function(require,module,exports){
 var extend = require('./extend');
 var Events = require('./Events');
@@ -685,14 +1052,19 @@ var Router = function(obj) {
 		this[prop] = obj[prop];
 	}
 
-	this.init.apply(this, arguments);
+	this.initialize.apply(this, arguments);
 };
 
 _.extend(Router.prototype, Events, {
-	init: function() {
+	initialize: function() {
 		this.setState(this.state);
 		this.on('routerUpdate', this.update, this);
 		this.registerWithDispatcher();
+	},
+
+	deinitialize: function() {
+		this.off('routerUpdate', this.update, this);
+		// this.unregisterWithDispatcher();	// is a function like this needed?
 	},
 
 	registerWithDispatcher: function() {
@@ -750,34 +1122,75 @@ var Events = require('./Events');
 // State is solely data for the UI component's consumption (i.e. a "view model")
 
 var Store = function(obj) {
-	this._lifecycle = ['startUpdate', 'onUpdate', 'afterUpdate'];
+	this._lifecycle = ['beforeUpdate', 'onUpdate', 'afterUpdate'];
 	this._lifecycleTimeout = true;
+	
 	// imagine the store as a model/state universe that intakes data
 	// from the server, constructs an updated view data obj, and then sets it on the view
 	this.model = {};
 	this.props = {}; // the response from the server (parsed), in other words static data
 	this.state = {}; // current state (before set on model, posted to server)
+	
 	for (var prop in obj) {
 		this[prop] = obj[prop];
 	}
-	this.init.apply(this, arguments);
+	
+	this.initialize.apply(this, arguments);
 };
 
+/*
+	initialize,				// all preliminary setup
+	deinitialize,			// deconstruction, unbinding events, etc
+
+	bindInternals, 			// convenience function for binding internal events (and events the component listens to)
+	registerWithDispatcher, 	// all dispatcher registrations (blank by default)
+
+	compareCidsByLevel, 		// takes two concatenated cids and checks if they match to a certain level, informing us if the two are related.
+								// this is particularly useful in event handlers when listening to blanket dispatcher events.
+								// use this function when you want to block a store's process because the dispatcher's message was irrelevant based
+								// on the component parent-child hierarchy
+
+	getCurrentState,				// needs work, should provide a copied object of this store's state
+	getCurrentProps,				// needs work, should provide a copied object of this store's props
+
+	setState,				// takes an incoming object, sets state properties based on that object. if successful, fires off an event
+	setProps,				// takes an incoming object, sets state properties based on that object. if successful, fires off an event
+
+	shouldComponentUpdate,	// takes the current state (props?) and a mutated version of the same object, compares the two, and if they are different, fires an event
+	startLifecycle,			// kicks off the store's update process, firing the specified functions in a queue
+
+	startUpdate,			// update process part 1
+	onUpdate,				// update process part 2 (most often used)
+	afterUpdate			// any post-update processes
+	
+*/
+
 _.extend(Store.prototype, Events, {
-	init: function() {
-		this.cid = _.uniqueId('s');
+	initialize: function() {
+		this.id = _.uniqueId('s');
 		this.setProps(this.model);
+
 		// initial state from constructor args
 		this.setState(this.state);
 		this.bindInternals();
 		this.registerWithDispatcher();
-		// this._startLifecycle( );
+	},
+
+	deinitialize: function() {
+		this.unbindInternals();
+		// this.unregisterWithDispatcher(); 	// is a function like this needed?
 	},
 
 	bindInternals: function() {
 		// this.on('setState', this.setState, this);
-		this.on('startLifecycle', this._startLifecycle, this);
+		this.on('startUpdate', this.startUpdate, this);
 		this.on('shouldComponentUpdate', this.shouldComponentUpdate, this);
+	},
+
+	unbindInternals: function() {
+		// this.on('setState', this.setState, this);
+		this.off('startUpdate', this.startUpdate, this);
+		this.off('shouldComponentUpdate', this.shouldComponentUpdate, this);
 	},
 
 	registerWithDispatcher: function() {
@@ -789,7 +1202,7 @@ _.extend(Store.prototype, Events, {
 		// starting from the beginning.
 		// the integer specifies how many levels we are checking down in the component hierarchy
 		// starting from the topmost cid
-		// in an event handler, the comparingCid is the incoming cid, while the comparatorCid
+		// in an event handler, the compareCid is the incoming cid, while the comparatorCid
 		// is the id to check against, usually this.cid or this.parent.cid
 		// basically the first id should be the same length or longer than the second
 		var compareCidArr = compareCid.split('c');
@@ -852,7 +1265,7 @@ _.extend(Store.prototype, Events, {
 		}
 	},
 
-	_startLifecycle: function() {
+	startUpdate: function() {
 		var payload = arguments;
 		var self = this;
 
@@ -878,7 +1291,7 @@ _.extend(Store.prototype, Events, {
 		})(0);
 	},
 
-	startUpdate: function() {
+	beforeUpdate: function() {
 		// define your custom method
 		// ensure this target obj based on the desired id
 		// if not, return false
@@ -917,11 +1330,12 @@ var Router = require('./Router');
 // ** your tools should work for you, not the other way around **
 
 // CORE
-// create a singleton object to collect all our pieces
+// create a singleton object to collect all our pieces,
+// then expose that in the browser
 
 var Ulna = {};
 
-// Allow the `Ulna` object to serve as a global event bus, for folks who
+// Allow the `Ulna` object to serve as a global event bus for folks who
 // want global "pubsub" in a convenient place.
 _.extend(Ulna, Events);
 

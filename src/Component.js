@@ -4,86 +4,118 @@ var extend = require('./extend');
 // Like Marionette or Backbone views, but able to be nested within a recursive tree-like hierarchy
 
 var Component = function(obj) {
-	// this.children = [];
-	// this.childContainer = null;
-	// this.childType = 'any';
-	// this.template = undefined;
-	
-	this.cid = _.uniqueId('c');
+	this._lifecycle = ['beforeUpdate', 'onUpdate', 'afterUpdate'];
+	this._lifecycleTimeout = true;
+	this.id = _.uniqueId('c');
+	this.children = [];
+
 	for (var prop in obj) {
+		// console.log(prop, obj);
 		this[prop] = obj[prop];
 	}
-	this.init.apply(this, arguments);
+
+	this.initialize.apply(this, arguments);
 };
 
-/*
-{
-	initialize,		// all initial bootstrapping
-	deinitialize,	// deconstruction, unbinding, clearing of children, etc.
+var proto = {
+	initialize: function() {
+		this.setStore();
 
-	addId,			// add this unique id to the $el (unused)
-	render,			// take store's props, components template, and produce an $el
+		if (typeof this.$el === 'string') {
+			console.log('$el supplied:', this.$el)
+			this.$el = $(this.$el);
 
-	bindEvents,		// bind events based on events hash
-	unbindEvents,	// unbind events in hash
+			if (this.template) {
+				console.log('template supplied, rendering')
+				this.render();
+			}
+		} else {
+			// if we haven't supplied an $el, we're probably populating children
+			console.log('no template, rendering as child')
+			this.renderAsChild();
+		}
 
-	hasChildBasedOnId,	// checks if this component has a child that matches the passed cid
-	createChildren,		// populates children based on data
-	getChildByType,		// dynamically loads components based on childType property, whether string or object
-
-	startUpdate,		// anything to do before updating
-	update,				// updating the DOM based on store's updated state
-	afterUpdate,		// post-update tasks, if any
-}
-*/
-
-/*
-todos:
-refine the way components create/destroy their children
-refine the way components create/destroy dom elements (fade in/out animations)
-
-refine way components initialize and deinitialize (for developer use of use)
-
-?lifecycle updating for components*
-?still use component.data, or switch to props?
-
-suite of explicit events that define the relationship between store, component
-*/
-
-_.extend(Component.prototype, {
-	init: function() {
-		this._setup();
-
-	},
-
-	_setup: function() {
-		this.$el = $(this.$el);
-		this._renderTemplate();
+		if (this.store) {
+			this.bindInternals();
+		}
+	
 		if (this.data.hasOwnProperty('children')) {
 			this.createChildren();
 		}
-	},
 
-	_addCid: function($el) {
-		$el.attr('data-cid', this.cid);
-	},
-
-	_renderTemplate: function() {
-		if (this.template === undefined || !this.template) {
-			this._bindEvents();
-			return;
-		};
-		var rendered = _.template(this.template);
-		rendered = rendered(this.data);
-		if (this.$el.length) {
-			this.$el.html(rendered);
-		} else {
-			this.$el = rendered;
+		if (this.events) {
+			this.bindEvents();
 		}
-		this._bindEvents();
+	},
+	deinitialize: function() {
+		if (this.store) {
+			this.store.deinitialize();
+		}
+
+		if (this.data.hasOwnProperty('children')) {
+			this.destroyChildren();
+		}
+
+		this.unrender();
+	},
+	setStore: function() {
+		// meant to be overriden
+		// stores may not always be needed for a component
+		// you can overrule this function to set your store during initialization
+		return false;
+	},
+	setComponentData: function() {
+		if (this.store) {
+			this.data = this.store.getCurrentProps();
+		} else {
+			console.log('Warning: setComponentData fired, but no store to get props from')
+		}
 	},
 
-	_bindEvents: function() {
+	render: function() {
+		var template = _.template( this.template );
+		template = template( this.data );
+
+		this.$el.css({
+			visibility: 'hidden'	// hide any incoming html first, use showElement to unhide
+		});
+		this.$el.html( template );
+		this.showElement();
+	},
+
+	renderAsChild: function() {
+		var template = _.template( this.template );
+		template = template( this.data );
+
+		this.$el = $( template );
+	},
+
+	showElement: function() {
+		this.$el.fadeIn(); 
+		this.$el.css({
+			visibility: 'visible'
+		});
+	},
+
+	unrender: function() {
+		// place to do fadeout animations
+		// this may need a queue to do things properly
+		this.$el.fadeOut();
+		this.$el.css({
+			visibility: hidden
+		});
+		this.$el.empty();
+	},
+
+	// internal events only, like componentUpdate and propsSet
+	bindInternals: function() {
+		this.store.on( 'componentUpdate', this.startUpdate, this );
+	},
+	unbindInternals: function() {
+		this.store.off( 'componentUpdate', this.startUpdate, this );
+	},
+
+	bindEvents: function() {
 		var regex = /^(\w+)/;
 		for (var prop in this.events) {
 			var eventString = regex.exec(prop)[0];
@@ -95,15 +127,13 @@ _.extend(Component.prototype, {
 				this.$el.find(reg.exec(prop)[0]).on(eventString, _.bind(this[this.events[prop]], this));
 			}
 		}
-
 	},
-
-	_unbindEvents: function() {
+	unbindEvents: function() {
 		var regex = /^(\w+)/;
 		for (var prop in this.events) {
 			var eventString = regex.exec(prop)[0];
 			if (eventString.indexOf('key') > -1) {
-				$(document).on(eventString, _.bind(this[this.events[prop]], this));
+				$(document).off(eventString, _.bind(this[this.events[prop]], this));
 			} else {
 				var reg = /[\S]*$/;
 
@@ -112,7 +142,7 @@ _.extend(Component.prototype, {
 		}
 	},
 
-	ensureThisHasChildBasedOnCid: function(cid) {
+	hasChildBasedOnId: function() {
 		var hasChild = false;
 		$.each(this.children, function() {
 			if (this.cid === cid) {
@@ -121,143 +151,142 @@ _.extend(Component.prototype, {
 		}, this);
 		return hasChild;
 	},
+	getChildByType: function( node ) {
+		// iterate over this.childType, returning the necessary constructor references
+		// based on the 'name' of the current prop's child node
+		/* 
+		i.e. sample props:
+		
+		children : [
+			{ name: 'myChildType',
+			  data: 'some data'},
+			{ name: 'otherChildType'
+			  data: 'other data' }
+		]
 
-	setComponentData: function() {
-		var props = this.store.getCurrentProps();
-		this.data = props;
+		in your constructor:
 
-		// this.createChildren();
+		childType: {
+			myChildType: myChildType	// the first is a key (string), the second is your require() reference
+			otherChildType: otherChildType
+		}
+		*/
+
+		// would be nice to have the node keys dynamically set by the developer
+		for (var prop in this.childType) {
+			if (prop === node.name) {
+				return this.childType[prop];
+			}
+		}
+	},
+
+	getTemplate: function() {
+		// look for a 'type' property associated with a given child node
+		// if the type matches a template's key in an object hash, we return that template
+		// if not, we just pass the template as normal
+		if (typeof this.template === 'object') {
+
+			if ( Object.keys(this.data).length === 1 ) {
+				// only one key, we've just inited with no real data
+				return this.template.default;
+			} else {
+
+				for ( var prop in this.template ) {
+					if ( prop === this.data.type ) {
+						return this.template[prop]
+					}
+				}
+			}
+		} else {
+			return this.template;
+		}
 	},
 
 	createChildren: function() {
-		if (typeof this.childType === 'object') {
-			for (var i = 0; i < this.data.children.length; i++) {
-
-				var Constructor = this.returnViewTypeByConfig(this.data.children[i]);
+		console.log('createChildren', this);
+		for (var i = 0; i < this.data.children.length; i++) {
+			if (typeof this.childType === 'object') {
+				var Constructor = this.getChildByType(this.data.children[i]);
 
 				var child = new Constructor({
-					cid: this.cid + 'c' + i,
+					id: this.id + 'c' + i,
 					data: this.data.children[i],
-					parent: this,
-					children: []
+					parent: this
 				});
-
-				this.children.push(child);
-			}
-
-			this._bindChildren();
-
-		} else {
-			for (var i = 0; i < this.data.children.length; i++) {
-
+			} else {
 				var child = new this.childType({
-					cid: this.cid + 'c' + i,
+					id: this.id + 'c' + i,
 					data: this.data.children[i],
 					parent: this,
-					children: []
 				});
-
-
-				this.children.push(child);
 			}
 
-			this._bindChildren();
+			this.addChild( child );
 		}
 	},
 
-	returnViewTypeByConfig: function(node) {
-		var viewConstructor;
-		var payload = [];
-		var viewModel = null;
-
-		// eval() workaround
-		// remember to add your views to "h" manually, otherwise they won't be recieved
-		var h = this.childType;
-		for (var prop in this.childType) {
-
-			// prop could be a string or another object
-			switch (typeof this.childType[prop]) {
-				case 'string':
-					if (prop.toUpperCase() === node['name']) {
-
-						viewConstructor = h[this.childType[prop]];
-
-					} else if (prop === 'default') {
-						viewConstructor = h[this.childType['default']];
-					}
-
-					break;
-				case 'object':
-					if (prop.toUpperCase() === node['name']) {
-
-						var typeProp = this.childType[prop];
-
-						if (typeProp.hasOwnProperty('type')) {
-							viewConstructor = h[typeProp.type];
-						}
-
-						// in cases where we have a view model, we have to return just the constructor and the view model
-						if (typeProp.hasOwnProperty('viewModel')) {
-							viewModel = typeProp.viewModel;
-						}
-					}
-					break;
-				case 'function':
-					if (prop.toLowerCase() === node['name']) {
-
-						var typeProp = this.childType[prop];
-
-						return typeProp;
-					}
-					break;
-			}
-		}
-
-		// we hand back a payload that can contain either the viewConstructor,
-		// or the viewConstructor and the viewModle from the SubAppConfig
-		payload.push(viewConstructor);
-		if (viewModel) {
-			payload.push(viewModel);
-		}
-		return payload;
-	},
-
-	_addChild: function(child) {
-		this.$el.find(this.childContainer).first().append(child.$el);
-	},
-
-	_bindChildren: function() {
-		var $children = this.$el.find(this.childContainer).first().children();
-		var self = this;
-		var i = 0;
-		$children.each(function() {
-			self.children[i].$el = $(this);
-			self.children[i]._bindEvents();
-			i++;
-		});
-	},
-
-	destroy: function() {
+	destroyChildren: function() {
 		if (this.children.length) {
-			for (var i = 0; this.children.length > i; i++) {
-				this.children[i].destroy();
-			}
+
+			$.each(this.children, function(index, child) {
+				console.log('destroyChildren:', child);
+				child.deinitialize();
+			});
+
+			this.children = [];
 		}
-
-		this._unbindEvents();
-
-		this.$el.empty();
-
-		this.children = [];
 	},
 
-	startUpdate: function() {},
+	addChild: function(child) {
+		if (this.childContainer) {
+			this.$el.find( this.childContainer ).first().append( child.$el );
+		} else {
+			this.$el.append( child.$el );
+		}
 
-	update: function() {},
+		this.children.push( child );
+		console.log('addChild', child);
+	},
 
-	afterUpdate: function() {}
-});
+	startUpdate: function() {
+		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
+		var self = this;
+		if (self._lifecycle.length <= 0) {
+			return;
+		}
+
+		var continueCycle;
+		(function chain(i) {
+
+			if (i >= self._lifecycle.length || typeof self[self._lifecycle[i]] !== 'function') {
+				return;
+			}
+
+			self._lifecycleTimeout = setTimeout(function() {
+				continueCycle = self[self._lifecycle[i]](payload);
+				if (!continueCycle) {
+					return;
+				}
+				chain(i + 1);
+			}, 0);
+
+		})(0);
+	},
+
+	beforeUpdate: function() {
+		return true;
+	},
+	onUpdate: function() {
+		return true;
+	},
+	afterUpdate: function() {
+
+	}
+}
+
+_.extend(Component.prototype, proto);
 
 Component.extend = extend;
 
 module.exports = Component;
+
