@@ -10,7 +10,6 @@ var Component = function(obj) {
 	this.children = [];
 
 	for (var prop in obj) {
-		// console.log(prop, obj);
 		this[prop] = obj[prop];
 	}
 
@@ -22,16 +21,13 @@ var proto = {
 		this.setStore();
 
 		if (typeof this.$el === 'string') {
-			console.log('$el supplied:', this.$el)
 			this.$el = $(this.$el);
 
 			if (this.template) {
-				console.log('template supplied, rendering')
 				this.render();
 			}
 		} else {
 			// if we haven't supplied an $el, we're probably populating children
-			console.log('no template, rendering as child')
 			this.renderAsChild();
 		}
 
@@ -245,7 +241,6 @@ var proto = {
 		}
 
 		this.children.push( child );
-		console.log('addChild', child);
 	},
 
 	startUpdate: function() {
