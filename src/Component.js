@@ -98,7 +98,7 @@ var proto = {
 		// this may need a queue to do things properly
 		this.$el.fadeOut();
 		this.$el.css({
-			visibility: hidden
+			visibility: 'hidden'
 		});
 		this.$el.empty();
 	},
@@ -243,7 +243,7 @@ var proto = {
 		this.children.push( child );
 	},
 
-	startUpdate: function() {
+	startUpdate: function( payload ) {
 		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
 		var self = this;
 		if (self._lifecycle.length <= 0) {

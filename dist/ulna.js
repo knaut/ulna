@@ -11,7 +11,6 @@ var Component = function(obj) {
 	this.children = [];
 
 	for (var prop in obj) {
-		// console.log(prop, obj);
 		this[prop] = obj[prop];
 	}
 
@@ -100,7 +99,7 @@ var proto = {
 		// this may need a queue to do things properly
 		this.$el.fadeOut();
 		this.$el.css({
-			visibility: hidden
+			visibility: 'hidden'
 		});
 		this.$el.empty();
 	},
@@ -236,7 +235,6 @@ var proto = {
 	},
 
 	addChild: function(child) {
-		console.log(this, this.childContainer);
 		if (this.childContainer) {
 			this.$el.find( this.childContainer ).first().append( child.$el );
 		} else {
@@ -244,10 +242,9 @@ var proto = {
 		}
 
 		this.children.push( child );
-		console.log('addChild', child);
 	},
 
-	startUpdate: function() {
+	startUpdate: function( payload ) {
 		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
 		var self = this;
 		if (self._lifecycle.length <= 0) {
@@ -830,7 +827,7 @@ var Store = function(obj) {
 	bindInternals, 			// convenience function for binding internal events (and events the component listens to)
 	registerWithDispatcher, 	// all dispatcher registrations (blank by default)
 
-	compareCidsByLevel, 		// takes two concatenated cids and checks if they match to a certain level, informing us if the two are related.
+	compareIdsByLevel, 		// takes two concatenated cids and checks if they match to a certain level, informing us if the two are related.
 								// this is particularly useful in event handlers when listening to blanket dispatcher events.
 								// use this function when you want to block a store's process because the dispatcher's message was irrelevant based
 								// on the component parent-child hierarchy
@@ -882,22 +879,22 @@ _.extend(Store.prototype, Events, {
 		// overrule in your constructor
 	},
 
-	compareCidsByLevel: function(integer, compareCid, comparatorCid) {
-		// take two cids and compare them to see if they match up to a certain limit,
+	compareIdsByLevel: function(integer, compareId, comparatorId) {
+		// take two ids and compare them to see if they match up to a certain limit,
 		// starting from the beginning.
 		// the integer specifies how many levels we are checking down in the component hierarchy
 		// starting from the topmost cid
 		// in an event handler, the compareCid is the incoming cid, while the comparatorCid
 		// is the id to check against, usually this.cid or this.parent.cid
 		// basically the first id should be the same length or longer than the second
-		var compareCidArr = compareCid.split('c');
-		compareCidArr.shift();
+		var compareIdArr = compareId.split('c');
+		compareIdArr.shift();
 
-		var comparatorCidArr = comparatorCid.split('c');
-		comparatorCidArr.shift();
+		var comparatorIdArr = comparatorId.split('c');
+		comparatorIdArr.shift();
 
 		for (var i = 0; i < integer; i++) {
-			if (compareCidArr[i] !== comparatorCidArr[i]) {
+			if (compareIdArr[i] !== comparatorIdArr[i]) {
 				return false;
 			}
 		}
