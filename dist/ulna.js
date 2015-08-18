@@ -200,7 +200,7 @@ var proto = {
 	},
 
 	createChildren: function() {
-		console.log('createChildren', this);
+		// console.log('createChildren', this);
 		for (var i = 0; i < this.data.children.length; i++) {
 			if (typeof this.childType === 'object') {
 				var Constructor = this.getChildByType(this.data.children[i]);
@@ -226,7 +226,7 @@ var proto = {
 		if (this.children.length) {
 
 			$.each(this.children, function(index, child) {
-				console.log('destroyChildren:', child);
+				// console.log('destroyChildren:', child);
 				child.deinitialize();
 			});
 
@@ -740,13 +740,32 @@ var Router = function(obj) {
 _.extend(Router.prototype, Events, {
 	initialize: function() {
 		this.setState(this.state);
-		this.on('routerUpdate', this.update, this);
 		this.registerWithDispatcher();
+		this.on('routerUpdate', this.update, this);
+		this.bindEvents();
 	},
 
 	deinitialize: function() {
 		this.off('routerUpdate', this.update, this);
 		// this.unregisterWithDispatcher();	// is a function like this needed?
+	},
+
+	bindEvents: function() {
+		var regex = /^(\w+)/;
+		for (var prop in this.events) {
+			var eventString = regex.exec(prop)[0];
+			// presume only window events
+			window.addEventListener(eventString, _.bind(this[this.events[prop]], this));
+		}
+	},
+
+	unbindEvents: function() {
+		var regex = /^(\w+)/;
+		for (var prop in this.events) {
+			var eventString = regex.exec(prop)[0];
+			// presume only window events
+			window.removeEventListener(eventString, _.bind(this[this.events[prop]], this));
+		}
 	},
 
 	registerWithDispatcher: function() {
@@ -775,14 +794,14 @@ _.extend(Router.prototype, Events, {
 		return clonedState;
 	},
 
-	updateHistory: function(name) {
-		document.title = name;
+	updateHistory: function( obj ) {
+		if (!obj.hasOwnProperty('title') || !obj.hasOwnProperty('name')) {
+			console.log('Warning: router must be supplied a name and title property to update history');
+		}
 
+		document.title = obj.title;
 		// update the history
-		history.pushState({
-			title: name,
-			name: name
-		}, name, name);
+		history.pushState(obj, obj.name, obj.name);
 	},
 
 	update: function() {
