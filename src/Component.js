@@ -1,4 +1,5 @@
 var extend = require('./extend');
+var Events = require('./Events');
 
 // COMPONENTS
 // Like Marionette or Backbone views, but able to be nested within a recursive tree-like hierarchy
@@ -42,6 +43,9 @@ var proto = {
 		if (this.events) {
 			this.bindEvents();
 		}
+
+		this.trigger('initialized');
+		console.log('init comp')
 	},
 	deinitialize: function() {
 		if (this.store) {
@@ -72,11 +76,9 @@ var proto = {
 		var template = _.template( this.template );
 		template = template( this.data );
 
-		this.$el.css({
-			visibility: 'hidden'	// hide any incoming html first, use showElement to unhide
-		});
 		this.$el.html( template );
-		this.showElement();
+
+		this.trigger('rendered');
 	},
 
 	renderAsChild: function() {
@@ -84,6 +86,8 @@ var proto = {
 		template = template( this.data );
 
 		this.$el = $( template );
+
+		this.trigger('renderedAsChild');
 	},
 
 	showElement: function() {
@@ -279,7 +283,7 @@ var proto = {
 	}
 }
 
-_.extend(Component.prototype, proto);
+_.extend(Component.prototype, Events, proto);
 
 Component.extend = extend;
 

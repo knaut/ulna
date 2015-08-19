@@ -1,5 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var extend = require('./extend');
+var Events = require('./Events');
 
 // COMPONENTS
 // Like Marionette or Backbone views, but able to be nested within a recursive tree-like hierarchy
@@ -43,6 +44,9 @@ var proto = {
 		if (this.events) {
 			this.bindEvents();
 		}
+
+		this.trigger('initialized');
+		console.log('init comp')
 	},
 	deinitialize: function() {
 		if (this.store) {
@@ -73,11 +77,9 @@ var proto = {
 		var template = _.template( this.template );
 		template = template( this.data );
 
-		this.$el.css({
-			visibility: 'hidden'	// hide any incoming html first, use showElement to unhide
-		});
 		this.$el.html( template );
-		this.showElement();
+
+		this.trigger('rendered');
 	},
 
 	renderAsChild: function() {
@@ -85,6 +87,8 @@ var proto = {
 		template = template( this.data );
 
 		this.$el = $( template );
+
+		this.trigger('renderedAsChild');
 	},
 
 	showElement: function() {
@@ -280,14 +284,14 @@ var proto = {
 	}
 }
 
-_.extend(Component.prototype, proto);
+_.extend(Component.prototype, Events, proto);
 
 Component.extend = extend;
 
 module.exports = Component;
 
 
-},{"./extend":7}],2:[function(require,module,exports){
+},{"./Events":3,"./extend":7}],2:[function(require,module,exports){
 var extend = require('./extend');
 var Events = require('./Events');
 
