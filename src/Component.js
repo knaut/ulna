@@ -5,8 +5,15 @@ var Events = require('./Events');
 // Like Marionette or Backbone views, but able to be nested within a recursive tree-like hierarchy
 
 var Component = function(obj) {
-	this._lifecycle = ['beforeUpdate', 'onUpdate', 'afterUpdate'];
-	this._lifecycleTimeout = true;
+	// updateCycle is for state updates in an associated store
+	this._updateCycle = ['beforeUpdate', 'onUpdate', 'afterUpdate'];
+	this._updateCycleTimeout = true;
+
+	// refreshCycle is for when a component's data changes and needs to re-render.
+	// this is usually when its store recieved new props.
+	this._refreshCycle = ['beforeRefresh', 'onRefresh', 'afterRefresh'];
+	this._refreshCycleTimeout = true;
+	
 	this.id = _.uniqueId('c');
 	this.children = [];
 
@@ -45,7 +52,6 @@ var proto = {
 		}
 
 		this.trigger('initialized');
-		console.log('init comp')
 	},
 	deinitialize: function() {
 		if (this.store) {
@@ -110,9 +116,11 @@ var proto = {
 	// internal events only, like componentUpdate and propsSet
 	bindInternals: function() {
 		this.store.on( 'componentUpdate', this.startUpdate, this );
+		this.store.on( 'propsSet', this.startRefresh, this );
 	},
 	unbindInternals: function() {
 		this.store.off( 'componentUpdate', this.startUpdate, this );
+		this.store.off( 'propsSet', this.startRefresh, this );
 	},
 
 	bindEvents: function() {
@@ -180,7 +188,9 @@ var proto = {
 		}
 	},
 
+	// support for multiple templates
 	getTemplate: function() {
+
 		// look for a 'type' property associated with a given child node
 		// if the type matches a template's key in an object hash, we return that template
 		// if not, we just pass the template as normal
@@ -223,6 +233,11 @@ var proto = {
 
 			this.addChild( child );
 		}
+
+		this.trigger('createdChildren', {
+			id: this.id,
+			children: this.children
+		});
 	},
 
 	destroyChildren: function() {
@@ -234,6 +249,8 @@ var proto = {
 			});
 
 			this.children = [];
+
+			this.trigger('destroyedChildren', this.id);
 		}
 	},
 
@@ -245,24 +262,62 @@ var proto = {
 		}
 
 		this.children.push( child );
+
+		this.trigger('addedChild', child);
 	},
 
-	startUpdate: function( payload ) {
+	startRefresh: function( payload ) {
+
 		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
 		var self = this;
-		if (self._lifecycle.length <= 0) {
+		if (self._refreshCycle.length <= 0) {
 			return;
 		}
 
 		var continueCycle;
 		(function chain(i) {
 
-			if (i >= self._lifecycle.length || typeof self[self._lifecycle[i]] !== 'function') {
+			if (i >= self._refreshCycle.length || typeof self[self._refreshCycle[i]] !== 'function') {
 				return;
 			}
 
-			self._lifecycleTimeout = setTimeout(function() {
-				continueCycle = self[self._lifecycle[i]](payload);
+			self._refreshCycleTimeout = setTimeout(function() {
+				continueCycle = self[self._refreshCycle[i]](payload);
+				if (!continueCycle) {
+					return;
+				}
+				chain(i + 1);
+			}, 0);
+
+		})(0);
+	},
+
+	beforeRefresh: function() {
+		return true;
+	},
+	onRefresh: function() {
+		return true;
+	},
+	afterRefresh: function() {
+
+	},
+
+	startUpdate: function( payload ) {
+		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
+		var self = this;
+		if (self._updateCycle.length <= 0) {
+			return;
+		}
+
+		var continueCycle;
+		(function chain(i) {
+
+			if (i >= self._updateCycle.length || typeof self[self._updateCycle[i]] !== 'function') {
+				return;
+			}
+
+			self._updateCycleTimeout = setTimeout(function() {
+				continueCycle = self[self._updateCycle[i]](payload);
 				if (!continueCycle) {
 					return;
 				}
