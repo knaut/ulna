@@ -146,15 +146,6 @@ var proto = {
 		}
 	},
 
-	hasChildBasedOnId: function() {
-		var hasChild = false;
-		$.each(this.children, function() {
-			if (this.cid === cid) {
-				hasChild = true;
-			}
-		}, this);
-		return hasChild;
-	},
 	getChildByType: function( node ) {
 		// iterate over this.childType, returning the necessary constructor references
 		// based on the 'name' of the current prop's child node
