@@ -19,6 +19,9 @@ var Component = function(obj) {
 	this._queueAddChildCycle = ['beforeAddChild', 'addChild', 'afterAddChild'];
 	this._queueAddChildCycleTimeout = true;
 
+	this._queueRemoveChildCycle = ['beforeRemoveChild', 'removeChild', 'afterRemoveChild'];
+	this._queueRemoveChildCycleTimeout = true;
+
 	this.id = _.uniqueId('c');
 	this.children = [];
 
@@ -69,6 +72,17 @@ var proto = {
 
 		this.unrender();
 	},
+
+	// internal events only, like componentUpdate and propsSet
+	bindInternals: function() {
+		this.store.on( 'componentUpdate', this.startUpdate, this );
+		this.store.on( 'propsSet', this.startRefresh, this );
+	},
+	unbindInternals: function() {
+		this.store.off( 'componentUpdate', this.startUpdate, this );
+		this.store.off( 'propsSet', this.startRefresh, this );
+	},
+
 	setStore: function() {
 		// meant to be overriden
 		// stores may not always be needed for a component
@@ -92,6 +106,10 @@ var proto = {
 		this.trigger('rendered');
 	},
 
+	unrender: function() {
+		this.$el.remove();
+	},
+
 	renderAsChild: function() {
 		var template = _.template( this.template );
 		template = template( this.data );
@@ -99,35 +117,6 @@ var proto = {
 		this.$el = $( template );
 
 		this.trigger('renderedAsChild');
-	},
-
-	showElement: function() {
-		// this.$el.fadeIn(); 
-		// this.$el.css({
-		// 	visibility: 'visible'
-		// });
-	},
-
-	unrender: function() {
-		// place to do fadeout animations
-		// this may need a queue to do things properly
-		// this.$el.fadeOut();
-		// this.$el.css({
-		// 	visibility: 'hidden'
-		// });
-		this.$el.remove();
-
-		this.afterRemoveChild();
-	},
-
-	// internal events only, like componentUpdate and propsSet
-	bindInternals: function() {
-		this.store.on( 'componentUpdate', this.startUpdate, this );
-		this.store.on( 'propsSet', this.startRefresh, this );
-	},
-	unbindInternals: function() {
-		this.store.off( 'componentUpdate', this.startUpdate, this );
-		this.store.off( 'propsSet', this.startRefresh, this );
 	},
 
 	bindEvents: function() {
@@ -241,7 +230,7 @@ var proto = {
 			// try these out
 			// if race conditions, make a queue
 			if (this.hasOwnProperty('childAnimate') || this.__proto__.hasOwnProperty('childAnimate')) {
-				console.log('createChildren: this.childAnimate', this.childAnimate)
+				// console.log('createChildren: this.childAnimate', this.childAnimate)
 				this.queueAddChild( child );
 			} else {
 				this.addChild( child );
@@ -255,7 +244,6 @@ var proto = {
 	},
 
 	queueAddChild: function( child ) {
-		console.log('queueAddChild', child.id);
 		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
 		var self = this;
 		if (self._queueAddChildCycle.length <= 0) {
@@ -279,7 +267,7 @@ var proto = {
 						ms = self.childAnimate[ self._queueAddChildCycle[ i ] ][1];
 					}
 					
-					self.childAnimate[ self._queueAddChildCycle[ i ] ][0]( child.$el );
+					self.childAnimate[ self._queueAddChildCycle[ i ] ][0]( child );
 				} else {
 					ms = 0;
 					self[ self._queueAddChildCycle[ i ] ]( child );
@@ -289,23 +277,6 @@ var proto = {
 			}, ms);
 
 		})(ms);
-	},
-
-	destroyChildren: function() {
-		if (this.children.length) {
-
-			var self = this;
-			$.each(this.children, function(index, child) {
-				// console.log('destroyChildren:', child);
-				self.beforeRemoveChild( child );
-				child.deinitialize();
-				self.afterRemoveChild( child );
-			});
-
-			this.children = [];
-
-			this.trigger('destroyedChildren', this.id);
-		}
 	},
 
 	addChild: function(child) {
@@ -320,8 +291,63 @@ var proto = {
 		this.trigger('addedChild', child);
 	},
 
-	startRefresh: function( payload ) {
+	destroyChildren: function() {
+		if (this.children.length) {
+			for (var i = 0; this.children.length > i; i++) {
+				if (this.hasOwnProperty('childAnimate') || this.__proto__.hasOwnProperty('childAnimate')) {
+					this.queueRemoveChild( this.children[i] );
+				} else {
+					this.removeChild( this.children[i] );
+				}
+			}
 
+			this.children = [];
+
+			this.trigger('destroyedChildren', this.id);
+		}
+	},
+
+	removeChild: function( child ) {
+		child.deinitialize();
+	},
+
+	queueRemoveChild: function( child ) {
+		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
+		var self = this;
+		if (self._queueRemoveChildCycle.length <= 0) {
+			return;
+		}
+
+		var continueCycle;
+		var ms = 0;
+		(function chain(i) {
+
+			if (i >= self._queueRemoveChildCycle.length) {
+				return;
+			}
+
+			self._queueRemoveChildCycleTimeout = setTimeout(function() {
+
+				if ( self._queueRemoveChildCycle[ i ] !== 'removeChild') {
+
+					// we make the millisecond wait delay an optional argument here
+					if ( self.childAnimate[ self._queueRemoveChildCycle[ i ] ].length > 0 ) {
+						ms = self.childAnimate[ self._queueRemoveChildCycle[ i ] ][1];
+					}
+					
+					self.childAnimate[ self._queueRemoveChildCycle[ i ] ][0]( child );
+				} else {
+					ms = 0;
+					self[ self._queueRemoveChildCycle[ i ] ]( child );
+				}
+
+				chain(i + 1);
+			}, ms);
+
+		})(ms);
+	},
+
+	startRefresh: function( payload ) {
 		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
 		var self = this;
 		if (self._refreshCycle.length <= 0) {
@@ -346,19 +372,6 @@ var proto = {
 		})(0);
 	},
 
-	beforeAddChild: function() {
-
-	},
-	afterAddChild: function() {
-
-	},
-	beforeRemoveChild: function() {
-
-	},
-	afterRemoveChild: function() {
-
-	},
-
 	beforeRefresh: function() {
 		this.destroyChildren();
 
@@ -368,7 +381,7 @@ var proto = {
 	},
 	onRefresh: function() {
 		this.createChildren();
-		
+
 		return true;
 	},
 	afterRefresh: function() {
