@@ -13,7 +13,12 @@ var Component = function(obj) {
 	// this is usually when its store recieved new props.
 	this._refreshCycle = ['beforeRefresh', 'onRefresh', 'afterRefresh'];
 	this._refreshCycleTimeout = true;
-	
+
+	// when we add children we fire three methods in a queue, if childAnimate is specified.
+	// the before/after methods are designs to provide hooks into animating children in and out
+	this._queueAddChildCycle = ['beforeAddChild', 'addChild', 'afterAddChild'];
+	this._queueAddChildCycleTimeout = true;
+
 	this.id = _.uniqueId('c');
 	this.children = [];
 
@@ -97,20 +102,22 @@ var proto = {
 	},
 
 	showElement: function() {
-		this.$el.fadeIn(); 
-		this.$el.css({
-			visibility: 'visible'
-		});
+		// this.$el.fadeIn(); 
+		// this.$el.css({
+		// 	visibility: 'visible'
+		// });
 	},
 
 	unrender: function() {
 		// place to do fadeout animations
 		// this may need a queue to do things properly
-		this.$el.fadeOut();
-		this.$el.css({
-			visibility: 'hidden'
-		});
-		this.$el.empty();
+		// this.$el.fadeOut();
+		// this.$el.css({
+		// 	visibility: 'hidden'
+		// });
+		this.$el.remove();
+
+		this.afterRemoveChild();
 	},
 
 	// internal events only, like componentUpdate and propsSet
@@ -231,7 +238,14 @@ var proto = {
 				});
 			}
 
-			this.addChild( child );
+			// try these out
+			// if race conditions, make a queue
+			if (this.hasOwnProperty('childAnimate') || this.__proto__.hasOwnProperty('childAnimate')) {
+				console.log('createChildren: this.childAnimate', this.childAnimate)
+				this.queueAddChild( child );
+			} else {
+				this.addChild( child );
+			}
 		}
 
 		this.trigger('createdChildren', {
@@ -240,12 +254,52 @@ var proto = {
 		});
 	},
 
+	queueAddChild: function( child ) {
+		console.log('queueAddChild', child.id);
+		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
+		var self = this;
+		if (self._queueAddChildCycle.length <= 0) {
+			return;
+		}
+
+		var continueCycle;
+		var ms = 0;
+		(function chain(i) {
+
+			if (i >= self._queueAddChildCycle.length) {
+				return;
+			}
+
+			self._queueAddChildCycleTimeout = setTimeout(function() {
+
+				if ( self._queueAddChildCycle[ i ] !== 'addChild') {
+
+					// we make the millisecond wait delay an optional argument here
+					if ( self.childAnimate[ self._queueAddChildCycle[ i ] ].length > 0 ) {
+						ms = self.childAnimate[ self._queueAddChildCycle[ i ] ][1];
+					}
+					
+					self.childAnimate[ self._queueAddChildCycle[ i ] ][0]( child.$el );
+				} else {
+					ms = 0;
+					self[ self._queueAddChildCycle[ i ] ]( child );
+				}
+
+				chain(i + 1);
+			}, ms);
+
+		})(ms);
+	},
+
 	destroyChildren: function() {
 		if (this.children.length) {
 
+			var self = this;
 			$.each(this.children, function(index, child) {
 				// console.log('destroyChildren:', child);
+				self.beforeRemoveChild( child );
 				child.deinitialize();
+				self.afterRemoveChild( child );
 			});
 
 			this.children = [];
@@ -292,10 +346,29 @@ var proto = {
 		})(0);
 	},
 
+	beforeAddChild: function() {
+
+	},
+	afterAddChild: function() {
+
+	},
+	beforeRemoveChild: function() {
+
+	},
+	afterRemoveChild: function() {
+
+	},
+
 	beforeRefresh: function() {
+		this.destroyChildren();
+
+		this.setComponentData();
+
 		return true;
 	},
 	onRefresh: function() {
+		this.createChildren();
+		
 		return true;
 	},
 	afterRefresh: function() {
