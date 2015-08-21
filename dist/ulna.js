@@ -60,6 +60,8 @@ var proto = {
 			this.bindEvents();
 		}
 
+
+
 		this.trigger('initialized');
 	},
 	deinitialize: function() {
@@ -98,8 +100,14 @@ var proto = {
 		}
 	},
 
+	// the only difference between render and renderAsChild, is that renderAsChild
+	// assigns the rendered template as the component's element. render, however,
+	// dumps the template into an already assigned $el
 	render: function() {
-		var template = _.template( this.template );
+		var template = this.getTemplate();
+
+		template = _.template( template );
+
 		template = template( this.data );
 
 		this.$el.html( template );
@@ -107,17 +115,20 @@ var proto = {
 		this.trigger('rendered');
 	},
 
-	unrender: function() {
-		this.$el.remove();
-	},
-
 	renderAsChild: function() {
-		var template = _.template( this.template );
+		var template = this.getTemplate();
+
+		template = _.template( template );
+		
 		template = template( this.data );
 
 		this.$el = $( template );
 
 		this.trigger('renderedAsChild');
+	},
+
+	unrender: function() {
+		this.$el.remove();
 	},
 
 	bindEvents: function() {
@@ -147,15 +158,6 @@ var proto = {
 		}
 	},
 
-	hasChildBasedOnId: function() {
-		var hasChild = false;
-		$.each(this.children, function() {
-			if (this.cid === cid) {
-				hasChild = true;
-			}
-		}, this);
-		return hasChild;
-	},
 	getChildByType: function( node ) {
 		// iterate over this.childType, returning the necessary constructor references
 		// based on the 'name' of the current prop's child node
@@ -308,10 +310,6 @@ var proto = {
 		}
 	},
 
-	removeChild: function( child ) {
-		child.deinitialize();
-	},
-
 	queueRemoveChild: function( child ) {
 		// fire our assigned lifecycle methods in a queue, blocking the process if any return false
 		var self = this;
@@ -346,6 +344,10 @@ var proto = {
 			}, ms);
 
 		})(ms);
+	},
+
+	removeChild: function( child ) {
+		child.deinitialize();
 	},
 
 	startRefresh: function( payload ) {
