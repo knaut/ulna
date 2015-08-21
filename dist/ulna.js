@@ -60,8 +60,6 @@ var proto = {
 			this.bindEvents();
 		}
 
-
-
 		this.trigger('initialized');
 	},
 	deinitialize: function() {
@@ -128,6 +126,7 @@ var proto = {
 	},
 
 	unrender: function() {
+		this.unbindEvents();
 		this.$el.remove();
 	},
 
@@ -376,19 +375,29 @@ var proto = {
 	},
 
 	beforeRefresh: function() {
-		this.destroyChildren();
-
+		if (this.children.length) {
+			this.destroyChildren();
+		} else {
+			this.unbindEvents();
+			this.$el.empty();
+		}
 		this.setComponentData();
 
 		return true;
 	},
 	onRefresh: function() {
-		this.createChildren();
+		if (this.data.hasOwnProperty('children')) {
+			this.createChildren();
+		} else {
+			this.render();
+		}
 
 		return true;
 	},
 	afterRefresh: function() {
-
+		if (this.events || this.__proto__.events) {
+			this.bindEvents();
+		}
 	},
 
 	startUpdate: function( payload ) {
