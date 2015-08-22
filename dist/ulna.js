@@ -951,13 +951,13 @@ _.extend(Router.prototype, Events, {
 	},
 
 	updateHistory: function( obj ) {
-		if (!obj.hasOwnProperty('title') || !obj.hasOwnProperty('name')) {
-			console.log('Warning: router must be supplied a name and title property to update history');
+		if (!obj.hasOwnProperty('title') || !obj.hasOwnProperty('name') || !obj.hasOwnProperty('url')) {
+			console.log('Warning: router must be supplied a name, title, and url property to update history');
 		}
 
 		document.title = obj.title;
 		// update the history
-		history.pushState(obj, obj.name, obj.name);
+		history.pushState(obj, obj.title, obj.url);
 	},
 
 	update: function() {
