@@ -210,7 +210,6 @@ var proto = {
 	},
 
 	createChildren: function() {
-		// console.log('createChildren', this);
 		for (var i = 0; i < this.data.children.length; i++) {
 			if (typeof this.childType === 'object') {
 				var Constructor = this.getChildByType(this.data.children[i]);
