@@ -446,6 +446,7 @@ Ulna is a WIP and the first production implementations of it are just finishing 
 
 # Credits
 daniel anderson (knaut) - info@knaut.net, portfolio.knaut.net
+
 Dispatcher lifted from @talyssonoc https://github.com/talyssonoc/backbone-dispatcher
 
 # Remember
