@@ -20,7 +20,7 @@ Ulna borrows concepts from ReactJS and Flux and implements them in a Backbone st
 
 Components have an update cycle similar to React, and have shouldComponentUpdate(). This function and (all others) can be overruled by using .extend().
 
-Ulna provides a Component, Store, Dispatcher, and Router, all of which can be extended, per Backbone's pattern. These are not all documented yet. However: 
+Ulna provides a Component, Store, Dispatcher, and Router, all of which can be extended, per Backbone's pattern. 
 * Components deal with UI interactions and creating child components. 
 * Stores handle UI state and the data Components render templates with. 
 * The Dispatcher is a shared message registry. Components dispatch messages, but never listen. Stores listen, and may dispatch as well.
