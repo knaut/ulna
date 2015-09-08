@@ -1,12 +1,10 @@
 # Ulna
 A midnight framework for single-page apps
 
-"your tools should work for you, not the other way around"
+"Your tools should work for you, not the other way around."
 
 # What is this?
 A javascript framework designed for rapidly creating single-page webapps, for both server and client.
-
-This README is very incomplete. A lot of documentation is forthcoming.
 
 # The Nutshell
 
