@@ -443,6 +443,7 @@ Ulna is a WIP and the first production implementations of it are just finishing 
 * allow developers to change hard-coded keys the component chain uses to populate itself: 'children', 'name', and 'type'
 * create more streamlined patterns (and examples) for isomorphic code.
 * stronger router, able to deal with wildcards and splats out of the box
+* get the app to bind to server-rendered html when we're already routed, rather than having to re-render everything client side
 
 # Credits
 daniel anderson (knaut) - info@knaut.net, portfolio.knaut.net
