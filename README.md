@@ -453,3 +453,6 @@ Dispatcher lifted from @talyssonoc https://github.com/talyssonoc/backbone-dispat
 # Remember
 "What you create with Ulna is more important than Ulna."
 (thanks @jedireza)
+
+## License
+MIT
