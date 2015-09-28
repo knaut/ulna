@@ -436,7 +436,7 @@ In your server-side routes, you can simply call your Component's handlers, spoof
 # Conclusion
 Ulna is designed to be scrappy and flexible, while encouraging the developer to think in terms of statefulness (via Stores), Dispatcher-style messaging, and progressive UI updates that occur in queues.
 
-Ulna is a WIP and the first production implementations of it are just finishing up. These docs will be much more fleshed out in the coming weeks. For now, you can take a look at the ulnaSimpleRouter repo, which demonstrates an Ulna app with basic routing capabilities and isomorphism.
+Ulna is a WIP. You can see a working implementation of the framework for a static website at http://werk.knaut.net. The plan is to continue to improve documentation and the framework as more implementations are made. For now, you can take a look at the ulnaSimpleRouter repo, which demonstrates an Ulna app with basic routing capabilities and isomorphism.
 
 # Wish List
 * better management of the services layer and sanitizing props consumption by components
