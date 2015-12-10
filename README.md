@@ -14,7 +14,7 @@ A javascript framework designed for rapidly creating single-page webapps, for bo
 		data: { message: 'Hello World' } 
 	});
 
-	=> <body>Hello World</body>
+	=> <body><div>Hello World</div></body>
 
 Ulna borrows concepts from ReactJS and Flux and implements them in a Backbone style. It is designed to be familiar for Backbone users, and borrows heavily in both code and convention from Backbone and Marionette. Under the surface, however, it is biased to the Flux style of building applications—the use of Stores to maintain state, a uni-directional data flow, and a Dispatcher for messaging.
 
