@@ -5,7 +5,8 @@ var test = new component({
 
 	events: {
 		'click root': function( event ) {
-			console.log('look, i\'m a card, i might be numbered or faced:', this.children)		
+			console.log('look, i\'m a card, i might be numbered or faced:', this)
+			this.dispatcher.dispatch('TEST_ACTION', {})	
 		}
 	},
 
@@ -18,8 +19,8 @@ var test = new component({
 		'TEST_ACTION': 'testAction'
 	},
 
-	testAction: function() {
-		console.log(this);
+	testAction: function( payload ) {
+		console.log('TEST_ACTION recieved:', payload);
 	},
 
 	onUpdate: function() {

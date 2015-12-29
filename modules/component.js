@@ -57,14 +57,12 @@ component.prototype = {
 		// backbone-style hash pairs for easy event config
 
 		for (var key in events) {
-			console.log(events[key])
 			var culledKey = this.cullEventKey( key );
 
 			// shortcut to just binding the root
 			if (culledKey[1] === 'root') {
 				// bind the root event based on the event type and the handler we supplied
-				console.log(this.events[key])
-				this.$root.bind( culledKey[0], this.events[ key ].apply(this) );
+				this.$root.bind( culledKey[0], this.events[ key ].bind(this) );
 			}
 
 		}
