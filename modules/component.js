@@ -55,7 +55,6 @@ component.prototype = {
 	},
 	bindEvents: function( events ) {
 		// backbone-style hash pairs for easy event config
-
 		for (var key in events) {
 			var culledKey = this.cullEventKey( key );
 
@@ -79,12 +78,9 @@ component.prototype = {
 	},
 	bindListen: function( actions ) {
 		// backbone-style hashes for flux-style action configuration
-		this.dispatcher.register('TEST_ACTION', this, 'testAction');
-		// for (var action in actions) {
-		// 	console.log(action, actions[ action ] );
-
-			
-		// }
+		for (var action in this.listen) {
+			this.dispatcher.register(action, this, this.listen[ action ].bind(this) );
+		}
 	},
 	unbindListen: function() {
 
