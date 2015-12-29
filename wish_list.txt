@@ -1,0 +1,53 @@
+
+
+• better management of the services layer and sanitizing props consumption by components
+	- configuration, sanitization, set props/ingest unfamiliar objects, map them to a familiar set pattern (schema) ->* jsschema
+		*- investigate ways of ingesting and transformation objects based on a map
+
+• allow developers to change hard-coded keys the component chain uses to populate itself: 'children', 'name', and 'type'
+	related to the "schema" of props - think of props as a normalized object based on a set of maps
+	- if a schema is set, these might be key keys ~* to think about
+
+• create more streamlined patterns (and examples) for isomorphic code.
+	- write the implementation first, deal with making it work later -- how should the code compile?
+		- write the project the makes sense, bend the framework to it
+	• better understanding browserify, dependencies, how to compile and minify a framework impl. -> single file client-side
+		(•* deals with better window detection - Ulna should detect window, expose different api hooks)
+
+
+• stronger router, able to deal with wildcards and splats out of the box
+	- investigate modern routers (ember) see what they do well
+	- is router any different than a component, aside from that there will only ever be one (and it doesn't have a template?) < -- it just broadcasts messages, its ui never leaves… unless there's no browser window
+
+• get the app to bind to server-rendered html when we're already routed, rather than having to re-render everything client side
+	- streamlining isomorphism and server rendering is a prerequisite
+	- we get window's state and find the expected dom elements/tree (!?*) and initialize the chain's $els on those
+
+•* syntactical sugar
+	- ui hash like in marionette
+		- steal the good things ? behaviors
+
+•* db implementations
+	-> mongodb
+
+()
+
+* what other uses could ulna have?
+	- robotics
+	- led control
+	- general applications
+	- communications with wearables
+
+()
+
+desirable components:
+heros
+boss navigation systems
+parallax (?)
+better implementation of "cards"
+music player/navigator
+
+
+()
+
+* write the implementation you want, then deal with the source

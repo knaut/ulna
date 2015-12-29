@@ -1,0 +1,27 @@
+• card application
+build an application that shows suits of cards, including illustrated and numbered cards
+include ui to navigate through and shuffle the deck
+have the router reflect the app state
+use a database to store your collections
+isomorphic components, stores, templates, etc., built into a single client-side minified file
+include a modal overlay that shows info about each card/suit
+
+* suits:
+-spades
+-clubs
+-hearts
+-diamonds
+
+*illustrated:
+-jack
+-king
+-queen
+-ace
+
+*show suit
+*shuffle suit
+*clean up suit (arrange to normal)
+
+UI:
+show suit (spades, clubs, hearts, diamongs)
+shuffle suit -/- clean up suit
