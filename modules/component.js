@@ -36,7 +36,13 @@ var component = function( obj ) {
 
 component.prototype = {
 	initialize: function() {
-
+		this.bindRoot( this.root );
+		console.log(this.root)
+	},
+	bindRoot: function( root ) {
+		// i am root
+		this.root = root;
+		this.$root = $(root);
 	},
 	deinitialize: function() {
 
