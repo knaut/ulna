@@ -63,7 +63,8 @@ component.prototype = {
 			// shortcut to just binding the root
 			if (culledKey[1] === 'root') {
 				// bind the root event based on the event type and the handler we supplied
-				this.$root.bind( culledKey[0], this[ events[key] ] );
+				console.log(this.events[key])
+				this.$root.bind( culledKey[0], this.events[ key ].apply(this) );
 			}
 
 		}

@@ -4,7 +4,9 @@ var test = new component({
 	dispatcher: testDispatcher,
 
 	events: {
-		'click root': 'clickRoot'
+		'click root': function( event ) {
+			console.log('look, i\'m a card, i might be numbered or faced:', this.children)		
+		}
 	},
 
 	clickRoot: function( event ) {
