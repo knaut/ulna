@@ -3,28 +3,20 @@ var test = new component({
 
 	dispatcher: testDispatcher,
 
-	events: function() {
-		var self = this;
-		return {
-			'click root': function( event ) {
-				console.log('click root');
-				console.log(event, this)
-				self.dispatcher.dispatch('TEST_ACTION', {})
-			}
-		}
+	events: {
+		'click root': 'clickRoot'
 	},
 
-	listen: function() {
-		var self = this;
-		return {
-			'TEST_ACTION': function( action ) {
-				// update something
-				console.log(action);
-			}
-		}
+	clickRoot: function( event ) {
+		console.log('click root', this);
+		testDispatcher.dispatch('TEST_ACTION', {})
 	},
 
-	handleTest: function() {
+	listen: {
+		'TEST_ACTION': 'testAction'
+	},
+
+	testAction: function() {
 		console.log(this);
 	},
 
@@ -32,5 +24,3 @@ var test = new component({
 
 	}
 });
-
-console.log(test)

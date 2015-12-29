@@ -42,6 +42,8 @@ component.prototype = {
 		this.bindEvents( this.events );
 
 		this.bindListen( this.listen );
+
+		console.log(this.dispatcher)
 	},
 	bindRoot: function( root ) {
 		// i am root
@@ -53,16 +55,15 @@ component.prototype = {
 	},
 	bindEvents: function( events ) {
 		// backbone-style hash pairs for easy event config
-		var self = this;
-		var events = this.events();
-		for (var key in events) {
 
+		for (var key in events) {
+			console.log(events[key])
 			var culledKey = this.cullEventKey( key );
 
 			// shortcut to just binding the root
 			if (culledKey[1] === 'root') {
 				// bind the root event based on the event type and the handler we supplied
-				this.$root.bind( culledKey[0], $.proxy( events[key], self.events) );
+				this.$root.bind( culledKey[0], this[ events[key] ] );
 			}
 
 		}
@@ -79,11 +80,12 @@ component.prototype = {
 	},
 	bindListen: function( actions ) {
 		// backbone-style hashes for flux-style action configuration
-		for (var action in actions) {
-			console.log(action, actions[action]);
+		this.dispatcher.register('TEST_ACTION', this, 'testAction');
+		// for (var action in actions) {
+		// 	console.log(action, actions[ action ] );
 
-			this.dispatcher.register(action, this, 'handleTest');
-		}
+			
+		// }
 	},
 	unbindListen: function() {
 
