@@ -95,6 +95,7 @@ var component = (function() {
 			}
 
 			this.normalized = this.normalize( this.template );
+			this.render();
 		},
 
 		normalize: function( struct ) {
@@ -152,14 +153,25 @@ var component = (function() {
 					console.log('found component!');
 
 					struct['parent'] = this;
-					this.children.push( struct );
-					break;					
-			}
 
-			// this.children = children;
+					this.children.push( struct );
+
+					return struct;
+			}
 
 			return normalized;
 
+		},
+
+		render: function() {
+			var string = nerve.stringify.normalized( this.normalized );
+			var template = _.template(string);
+
+			this.$root.html( template( this.props ) );
+
+			// for (var r = 0; this.children.length > r; r++) {
+			// 	this.children[r].initialize();
+			// }
 		}
 	}
 

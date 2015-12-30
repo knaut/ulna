@@ -1,4 +1,6 @@
 var example = new component({
+	root: '#test',
+
 	template: {
 		div: 'this is an example component',
 		// span: '~~bool~~'
