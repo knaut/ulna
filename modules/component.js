@@ -84,5 +84,13 @@ component.prototype = {
 	},
 	unbindListen: function() {
 
+	},
+
+	setProps: function( obj ) {
+		for (var prop in this.props) {
+			this.props[prop] = obj[prop];
+		}
+
+		this.onUpdate();
 	}
 }

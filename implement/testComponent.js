@@ -1,6 +1,13 @@
 var test = new component({
 	root: '#test-root',
 
+	template: {
+		div: {
+			h2: 'this is a counter',
+			p: '~~number~~'
+		}
+	},
+
 	dispatcher: testDispatcher,
 
 	props: {
@@ -17,10 +24,14 @@ var test = new component({
 	listen: {
 		'TEST_ACTION': function( payload )  {
 			console.log('TEST_ACTION recieved:', payload);
+
+			this.setProps({
+				number: this.props.number + 1
+			});
 		}
 	},
 
 	onUpdate: function() {
-
+		console.log(this.props.number)
 	}
 });
