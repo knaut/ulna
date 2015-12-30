@@ -12,18 +12,27 @@
 	<script type="text/javascript" src="../nerve/modules/toType.js"></script>
 	<script type="text/javascript" src="../nerve/modules/parseCSSKey.js"></script>
 	<script type="text/javascript" src="../nerve/modules/parseFunctions.js"></script>
+	<script type="text/javascript" src="../nerve/modules/parse.js"></script>
 	<script type="text/javascript" src="../nerve/modules/normalize.js"></script>
 	<script type="text/javascript" src="../nerve/modules/templateExamples.js"></script>
 	<script type="text/javascript" src="../nerve/modules/stringify.js"></script>
+	<script type="text/javascript" src="../nerve/modules/core.js"></script>
 
 	<!-- Jasmine Includes -->
 	<link rel="shortcut icon" type="image/png" href="jasmine/images/jasmine_favicon.png">
 
 	<!-- Module includes -->
 	<script type="text/javascript" src="modules/events.js"></script>
-	<script type="text/javascript" src="modules/toType.js"></script>
 	<script type="text/javascript" src="modules/dispatcher.js"></script>
 	<script type="text/javascript" src="modules/component.js"></script>
+
+	<script>
+		_.templateSettings = {
+			interpolate: /\~\~(.+?)\~\~/g,
+			escape: /\-\-(.+?)\-\-/g,
+			evaluate: /\<\<(.+?)\>\>/g
+		}
+	</script>
 
 	
 <body>

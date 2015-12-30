@@ -1,4 +1,7 @@
 var component = function( obj ) {
+	// type checking for nerve
+	this.type = 'component';
+
 	// root selector and jquery ref
 	this.root = null;
 	this.$root = null;
@@ -31,6 +34,8 @@ var component = function( obj ) {
 		this[prop] = obj[prop]
 	}
 
+	// this.template = nerve.normalize( this.template );
+
 	this.initialize.apply(this, arguments);
 }
 
@@ -42,8 +47,6 @@ component.prototype = {
 		this.bindEvents( this.events );
 
 		this.bindListen( this.listen );
-
-		console.log(this.dispatcher)
 	},
 	bindRoot: function( root ) {
 		// i am root
@@ -91,6 +94,6 @@ component.prototype = {
 			this.props[prop] = obj[prop];
 		}
 
-		this.onUpdate();
+		this.onUpdate( this.template );
 	}
 }
