@@ -1,9 +1,7 @@
 var example = new component({
-	root: '#container',
-
 	template: {
 		div: 'this is an example component',
-		span: '~~bool~~'
+		// span: '~~bool~~'
 	},
 
 	dispatcher: testDispatcher,
@@ -18,18 +16,8 @@ var example = new component({
 				bool: !this.props.bool
 			});
 		}
-	},
-
-	onUpdate: function() {
-		var template = _.template( nerve.render( this.template ) );
-		
-		console.log(this.props)
-
-		console.log( template(this.props ) )
-
-		this.$root.html( template(this.props) );
 	}
-})
+});
 
 
 
@@ -40,15 +28,14 @@ var test = new component({
 		div: {
 			h2: 'this is a counter',
 			p: '~~number~~',
-			'#container': example
+			'#test': example
 		}
 	},
 
 	dispatcher: testDispatcher,
 
 	props: {
-		number: 0,
-		// bool: false	
+		number: 0
 	},
 
 	events: {
@@ -65,18 +52,5 @@ var test = new component({
 				number: this.props.number + 1,
 			});
 		}
-	},
-
-	onUpdate: function( template ) {
-		// traditional string rendering with underscore
-		// console.log( nerve.render(this.template) )
-
-		console.log(this.children, template)
-
-		var stringTemp = nerve.normalize.call(this, template)
-
-		var template = _.template( nerve.render( this.template ) );
-
-		this.$root.html( template(this.props) )
 	}
 });

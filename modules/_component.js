@@ -39,7 +39,7 @@ var component = (function() {
 		this.initialize.apply(this, arguments);
 	}
 
-	component.prototype = {
+	var methods = {
 		initialize: function() {
 			// setup for any component, in order
 			this.bindRoot( this.root );
@@ -94,75 +94,16 @@ var component = (function() {
 				this.props[prop] = obj[prop];
 			}
 
-			this.normalized = this.normalize( this.template );
-		},
-
-		normalize: function( struct ) {
-
-			var normalized = [];
-			this.children = [];
-
-			var type = toType(struct);
-			
-			if (type === 'function') {
-				if (struct.hasOwnProperty('template')) {
-					type = 'component';
-				}
-			}	
-
-			switch (type) {
-				case 'string':
-					return struct;
-					break;
-				case 'array':
-					for (var i = 0; struct.length > i; i++) {
-
-						var obj = struct[i];
-
-						for (var key in obj) {
-							var parsed = nerve.parse.css.selector(key);
-							parsed.inner = this.normalize(obj[key]);
-						}
-
-						normalized.push(parsed)
-					}
-					break;
-				case 'object':
-					var keys = Object.keys(struct);
-
-					for (var k = 0; keys.length > k; k++) {
-						var obj = {};
-						var key = keys[k];
-						var val = struct[key];
-
-						obj[key] = val;
-
-						for (var keyS in obj) {
-							var parsed = nerve.parse.css.selector(keyS);
-							parsed.inner = this.normalize(struct[keyS]);
-						}
-
-						normalized.push(parsed);
-					}
-					break;
-				case 'function':
-					normalized.push(nerve.parse.functions.normalize(struct));
-					break;
-				case 'component':
-					console.log('found component!');
-
-					struct['parent'] = this;
-					this.children.push( struct );
-					break;					
-			}
-
-			// this.children = children;
-
-			return normalized;
-
+			this.onUpdate();
 		}
 	}
 
-	return component;
+	_.extend(component.prototype, methods);
+
+	component.extend = extend;
+
+	return {
+		component: component
+	}
 
 })();
