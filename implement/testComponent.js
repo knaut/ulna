@@ -3,7 +3,7 @@ var example = new component({
 
 	template: {
 		div: 'this is an example component',
-		// span: '~~bool~~'
+		span: '~~bool~~'
 	},
 
 	dispatcher: testDispatcher,

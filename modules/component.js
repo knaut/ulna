@@ -1,53 +1,38 @@
 var component = (function() {
 
 	var component = function( obj ) {
-		// type checking for nerve
+		// type checking for nerve templates
 		this.type = 'component';
-
-		// root selector and jquery ref
-		this.root = null;
-		this.$root = null;
-
-		// nerve template structure
-		this.template = null;
-
-		// one update cycle to rule them all
-		this.updateCycle = [
-			'beforeUpdate',
-			'onUpdate',
-			'afterUpdate'
-		];
-		this.updateCycleTimeout = true;
 
 		// id addresses
 		this.id = _.uniqueId('c');
 
-		// children 
-		this.children = [];
+		
 
-		// ui event hashes
-		this.events = {};
-
-		// listen hash for dispatcher hooks
-		this.listen = {};
-
-		// apply arguments
 		for (var prop in obj) {
 			this[prop] = obj[prop]
 		}
 
+		// setup for any component, in order
 		this.initialize.apply(this, arguments);
+
+
+		this.bindListen.call( this, this.listen );
+
+		// for (var action in this.listen) {
+		// 	this.dispatcher.register(action, this, this.listen[ action ].bind(this) );
+		// }
 	}
 
 	component.prototype = {
-		initialize: function() {
-			// setup for any component, in order
+
+		initialize: function( obj ) {
+			// set up a component for rendering
 			this.bindRoot( this.root );
 
 			this.bindEvents( this.events );
-
-			this.bindListen( this.listen );
 		},
+
 		bindRoot: function( root ) {
 			// i am root
 			this.root = root;
@@ -83,19 +68,43 @@ var component = (function() {
 			// backbone-style hashes for flux-style action configuration
 			for (var action in this.listen) {
 				this.dispatcher.register(action, this, this.listen[ action ].bind(this) );
-			}
+			}	
 		},
 		unbindListen: function() {
 
 		},
 
 		setProps: function( obj ) {
-			for (var prop in this.props) {
-				this.props[prop] = obj[prop];
+			if (obj) {
+				for (var prop in this.props) {
+					this.props[prop] = obj[prop];
+				}	
 			}
-
-			this.normalized = this.normalize( this.template );
+			
 			this.render();
+		},
+
+		render: function() {
+			this.normalized = this.normalize( this.template );
+
+			var string = nerve.stringify.normalized( this.normalized );
+			var template = _.template(string);
+
+			this.$root.html( template( this.props ) );
+
+			console.log(this.children, this.root, this.$root);
+
+			if (this.children.length) {
+				this.renderChildren();
+			}
+		},
+
+		renderChildren: function() {
+			for (var c = 0; this.children.length > c; c++) {
+				this.children[c].initialize();
+
+				this.children[c].setProps();
+			}
 		},
 
 		normalize: function( struct ) {
@@ -150,11 +159,12 @@ var component = (function() {
 					normalized.push(nerve.parse.functions.normalize(struct));
 					break;
 				case 'component':
-					console.log('found component!');
 
 					struct['parent'] = this;
 
 					this.children.push( struct );
+
+					console.log('found component!', struct);
 
 					return struct;
 			}
@@ -163,16 +173,7 @@ var component = (function() {
 
 		},
 
-		render: function() {
-			var string = nerve.stringify.normalized( this.normalized );
-			var template = _.template(string);
-
-			this.$root.html( template( this.props ) );
-
-			// for (var r = 0; this.children.length > r; r++) {
-			// 	this.children[r].initialize();
-			// }
-		}
+		
 	}
 
 	return component;
