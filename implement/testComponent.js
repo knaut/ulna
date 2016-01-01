@@ -21,8 +21,6 @@ var example = new component({
 	}
 });
 
-
-
 var test = new component({
 	root: '#test-root',
 
@@ -41,13 +39,14 @@ var test = new component({
 	},
 
 	events: {
-		'click root': function( event ) {
+		'click h2': function( event ) {
 			this.dispatcher.dispatch('TEST_ACTION', {})	
 		}
 	},
 
 	listen: {
 		'TEST_ACTION': function( payload )  {
+			console.log(this)
 			console.log('TEST_ACTION recieved:', payload);
 
 			this.setProps({
