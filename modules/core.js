@@ -1,7 +1,7 @@
 var ulna = (function() {
 	return {
 		extend: extend,
-		component: component.component,
+		component: Component.component,
 		dispatcher: Dispatcher.dispatcher
 	}
 })();
