@@ -33,15 +33,8 @@ server.register(Inert, function() {
 	});
 });
 
-// import lib stuff
-
+// Load the app
 var app = require('./public/js/app.js');
-
-console.log(app)
-
-
-
-
 
 
 // ROUTES
