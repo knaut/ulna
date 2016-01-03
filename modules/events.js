@@ -293,10 +293,6 @@ var Events = (function() {
 	Events.bind = Events.on;
 	Events.unbind = Events.off;
 
-	if (typeof window === 'undefined') {
-	    module.exports = Events;
-	} else {
-	    window.Events = Events;
-	}
+	module.exports = Events;
 
 })();

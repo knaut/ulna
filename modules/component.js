@@ -151,10 +151,6 @@ var Component = (function() {
 		}
 	}
 
-	if (typeof window === 'undefined') {
-		module.exports = Component;
-	} else {
-		window.Component = Component;
-	}
+	module.exports = Component;
 
 })();

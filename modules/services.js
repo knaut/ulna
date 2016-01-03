@@ -17,11 +17,7 @@ var Services = (function() {
 		}
 	}
 
-	if (typeof window === 'undefined') {
-	    module.exports = Services;
-	} else {
-	    window.Services = Services;
-	}
+	module.exports = Services;
 
 })();
 

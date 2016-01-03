@@ -1,6 +1,6 @@
 
-if (typeof window === undefined) {
-	$ = require('./appHead.js')		
+if (typeof window === 'undefined') {
+	$ = require('./appHead.js');	
 }
 
 
@@ -9,7 +9,7 @@ var Dispatcher = require('../../../../modules/dispatcher.js');
 var Services = require('../../../../modules/services.js');
 
 
-
+console.log(Component, Dispatcher)
 var dispatcher = new Dispatcher({
 	actions: [
 		'ROUTE_CHANGE'
@@ -116,7 +116,7 @@ var main = new Component({
 	}
 });
 
-var app = new Component({
+app = new Component({
 	root: '#app-root',
 	dispatcher: dispatcher,
 	template: {
@@ -156,5 +156,8 @@ var app = new Component({
 		}
 	}
 });
+
+
+console.log(Dispatcher)
 
 module.exports = app;

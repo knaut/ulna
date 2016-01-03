@@ -136,11 +136,10 @@ var Dispatcher = (function() {
 		}
 	}
 
-	if (typeof window === 'undefined') {
+	
 		module.exports = Dispatcher;
-	} else {
-		window.Dispatcher = Dispatcher;
-	}
+
+	
 
 })();
 
