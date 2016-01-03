@@ -1,5 +1,8 @@
 
-$ = require('./appHead.js')	
+if (typeof window === undefined) {
+	$ = require('./appHead.js')		
+}
+
 
 var Component = require('../../../../modules/component.js');
 var Dispatcher = require('../../../../modules/dispatcher.js');
