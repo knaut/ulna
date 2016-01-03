@@ -1,6 +1,18 @@
 var Component = (function() {
 
-	var component = function( obj ) {
+	if (typeof Nerve === 'undefined') {
+		var Nerve = require('nerve-templates');
+	}
+
+	var _ = require('underscore');
+
+	_.templateSettings = {
+		evaluate: /\<\<([\s\S]+?)\>\>/g, 
+		interpolate: /\~\~([\s\S]+?)\~\~/g, 
+		escape: /\-\-([\s\S]+?)\-\-/g
+	}
+
+	var Component = function( obj ) {
 		// type checking for nerve templates
 		this.type = 'component';
 		this.children = [];
@@ -16,10 +28,10 @@ var Component = (function() {
 		// we use initialize/deinitialize for dom-related setup and teardown
 		this.bindListen();
 
-		this.nerve = new Nerve( this );
+		this.nerve = new Nerve.Nerve( this );
 	}
 
-	component.prototype = {
+	Component.prototype = {
 
 		initialize: function( obj ) {
 			// set up a component for rendering into the dom
@@ -38,6 +50,8 @@ var Component = (function() {
 
 		bindEvents: function( events ) {
 			// backbone-style hash pairs for easy event config
+			if (typeof window === 'undefined') return;
+
 			for (var key in this.events) {
 				var culledKey = this.cullEventKey( key );
 
@@ -61,6 +75,8 @@ var Component = (function() {
 		},
 
 		unbindEvents: function( events ) {
+			if (typeof window === 'undefined') return;
+
 			for (var key in events) {
 				var culledKey = this.cullEventKey( key );
 
@@ -103,8 +119,14 @@ var Component = (function() {
 
 
 			var string = this.nerve.stringify.normalized( this.normalized );
-			var template = _.template(string);
-
+			
+			var template = _.template(string);	
+			
+			console.log(template)
+			var compiled = template(this.props);
+			console.log(this.props)
+			console.log(_.template(compiled)(this.props))
+			
 			this.$root.html( template( this.props ) );
 
 			this.bindEvents();
@@ -129,6 +151,10 @@ var Component = (function() {
 		}
 	}
 
-	return component;
+	if (typeof window === 'undefined') {
+		module.exports = Component;
+	} else {
+		window.Component = Component;
+	}
 
 })();

@@ -1,7 +1,7 @@
 var Events = (function() {
 	// Events, stolen from Backbone
 
-	// Ulna.Events
+	// Events
 	// ---------------
 	// A module that can be mixed in to *any object* in order to provide it with
 	// custom events. You may bind with `on` or remove with `off` callback
@@ -9,7 +9,7 @@ var Events = (function() {
 	// succession.
 	//
 	//     var object = {};
-	//     _.extend(object, Ulna.Events);
+	//     _.extend(object, Events);
 	//     object.on('expand', function(){ alert('expanded'); });
 	//     object.trigger('expand');
 	//
@@ -293,6 +293,10 @@ var Events = (function() {
 	Events.bind = Events.on;
 	Events.unbind = Events.off;
 
-	return Events;
+	if (typeof window === 'undefined') {
+	    module.exports = Events;
+	} else {
+	    window.Events = Events;
+	}
 
 })();
