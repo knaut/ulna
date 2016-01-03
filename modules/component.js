@@ -23,7 +23,6 @@ var Component = (function() {
 
 		initialize: function( obj ) {
 			// set up a component for rendering into the dom
-			console.log('initialize', this.root);
 
 			this.$root = $(this.root);
 
@@ -31,7 +30,6 @@ var Component = (function() {
 		},
 		deinitialize: function() {
 			// unbind from the dom
-			console.log('deinitialize', this.root);
 
 			this.unbindEvents( this.events );
 
@@ -48,8 +46,6 @@ var Component = (function() {
 					// bind the root event based on the event type and the handler we supplied
 					this.$root.on( culledKey[0], this.events[ key ].bind(this) );
 				} else {
-					// console.log(culledKey[1]);
-					// console.log(this.$root.find( culledKey[1] ) )
 					this.$root.find( culledKey[1] ).on( culledKey[0], this.events[ key ].bind(this) );
 				}
 
@@ -104,6 +100,7 @@ var Component = (function() {
 			this.children = [];
 
 			this.normalized = this.nerve.normalize( this.template );
+
 
 			var string = this.nerve.stringify.normalized( this.normalized );
 			var template = _.template(string);

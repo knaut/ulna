@@ -70,7 +70,6 @@ rootTempl1 = {
 rootTempl2 = {
 	h2: 'Click Me',
 	'#child-1': example,
-
 }
 
 
