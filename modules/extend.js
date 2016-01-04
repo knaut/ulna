@@ -1,3 +1,5 @@
+var _ = require('underscore');
+
 var extend = function(protoProps, staticProps) {
 	var parent = this;
 	var child;
@@ -27,3 +29,5 @@ var extend = function(protoProps, staticProps) {
 
 	return child;
 };
+
+module.exports = extend;
