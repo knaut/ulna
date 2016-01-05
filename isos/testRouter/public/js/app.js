@@ -51,7 +51,7 @@ app = new Router({
 
 			var route = this.generateRoute( payload.data );
 
-			this.updateHistory( route );
+			this.history.push( route );
 
 		}
 	},
