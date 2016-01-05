@@ -18585,19 +18585,20 @@ app = new Router({
 	},
 
 	router: {
-		'/': function( key ) {
+		'/': function( component ) {
+			var queries = component.getChildQueries();
+			console.log(queries)
+		},
+		'/test-1': function( component ) {
 			
 		},
-		'/test-1': function( key ) {
+		'/test-2': function( component ) {
 			
 		},
-		'/test-2': function( key ) {
+		'/test-3': function( component ) {
 			
 		},
-		'/test-3': function( key ) {
-			
-		},
-	 	'/test-3/*': function( key ) {}
+	 	'/test-3/*': function( component ) {}
 	}
 });
 
@@ -18649,6 +18650,13 @@ var main = new Component({
 		content: 'here\'s whatever i start out with'
 	},
 
+	query: {
+		main: {
+			title: 'string',
+			content: 'string'
+		}
+	},
+
 	listen: {
 		'ROUTE_CHANGE': function(payload) {
 			// if we recieve a route change, we can determine
@@ -18674,6 +18682,10 @@ var nav = new Component({
 			'test2',
 			'test3'
 		]
+	},
+
+	query: {
+		nav: 'array'
 	},
 
 	template: {
@@ -18910,6 +18922,18 @@ var methods = {
 
 			this.children[c].render();
 		}
+	},
+
+	getChildQueries: function() {
+		var queries = {};
+		
+		for (var c = 0; this.children.length > c; c++) {			
+			var query = this.children[c].query;
+			var childKey = Object.keys(query)[0];
+			queries[childKey] = query[childKey];
+		}
+
+		return queries;
 	}
 }
 

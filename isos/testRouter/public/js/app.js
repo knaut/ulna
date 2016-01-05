@@ -57,19 +57,20 @@ app = new Router({
 	},
 
 	router: {
-		'/': function( key ) {
+		'/': function( component ) {
+			var queries = component.getChildQueries();
 			
 		},
-		'/test-1': function( key ) {
+		'/test-1': function( component ) {
 			
 		},
-		'/test-2': function( key ) {
+		'/test-2': function( component ) {
 			
 		},
-		'/test-3': function( key ) {
+		'/test-3': function( component ) {
 			
 		},
-	 	'/test-3/*': function( key ) {}
+	 	'/test-3/*': function( component ) {}
 	}
 });
 

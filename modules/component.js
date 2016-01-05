@@ -153,6 +153,18 @@ var methods = {
 
 			this.children[c].render();
 		}
+	},
+
+	getChildQueries: function() {
+		var queries = {};
+		
+		for (var c = 0; this.children.length > c; c++) {			
+			var query = this.children[c].query;
+			var childKey = Object.keys(query)[0];
+			queries[childKey] = query[childKey];
+		}
+
+		return queries;
 	}
 }
 

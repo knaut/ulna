@@ -18,6 +18,13 @@ var main = new Component({
 		content: 'here\'s whatever i start out with'
 	},
 
+	query: {
+		main: {
+			title: 'string',
+			content: 'string'
+		}
+	},
+
 	listen: {
 		'ROUTE_CHANGE': function(payload) {
 			// if we recieve a route change, we can determine

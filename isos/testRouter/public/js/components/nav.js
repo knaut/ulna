@@ -14,6 +14,10 @@ var nav = new Component({
 		]
 	},
 
+	query: {
+		nav: 'array'
+	},
+
 	template: {
 		ul: function() {
 			for (n = 0; nav.length > n; n++) {
