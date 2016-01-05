@@ -15,28 +15,39 @@ var Component = function(obj) {
 	// type checking for nerve templates
 	this.type = 'component';
 	this.children = [];
+	this.normalized = null;
 
 	for (var prop in obj) {
 		this[prop] = obj[prop];
 	}
 
+	this.nerve = new Nerve.Nerve(this);
+
+	this.normalized = this.nerve.normalize( this.template );
+
 	// setup for any component
 	this.initialize.apply(this, arguments);
+
+	
 
 	// we bind dispatcher listeners on construction.
 	// we use initialize/deinitialize for dom-related setup and teardown
 	this.bindListen();
-
-	this.nerve = new Nerve.Nerve(this);
 }
 
 var methods = {
 	initialize: function(obj) {
 		// set up a component for rendering into the dom
-
 		this.$root = $(this.root);
 
 		this.bindEvents();
+
+		// bind children
+		if (this.children.length) {
+			for (var c = 0; this.children.length > c; c++) {
+				this.children[c].initialize();
+			}
+		}
 	},
 	deinitialize: function() {
 		// unbind from the dom
@@ -47,9 +58,10 @@ var methods = {
 	},
 
 	bindEvents: function(events) {
-		// backbone-style hash pairs for easy event config
+		// quick isomorphic fix
 		if (typeof window === 'undefined') return;
 
+		// backbone-style hash pairs for easy event config
 		for (var key in this.events) {
 			var culledKey = this.cullEventKey(key);
 
@@ -60,7 +72,6 @@ var methods = {
 			} else {
 				this.$root.find(culledKey[1]).on(culledKey[0], this.events[key].bind(this));
 			}
-
 		}
 	},
 
@@ -148,7 +159,5 @@ var methods = {
 _.extend(Component.prototype, methods);
 
 Component.extend = extend;
-
-console.log( Component.extend)
 
 module.exports = Component;

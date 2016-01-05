@@ -12,7 +12,9 @@ var appHead = '<!DOCTYPE html>' +
 		'<div id="app-root"></div>' +
 	'</body>' +
 	'<script type="text/javascript">' +
-		'$(document).ready( function() { app.render() });' +
+		'$(document).ready( function() { app.dispatcher.dispatch("APP_LOAD", {' +
+			'location: app.getLocation( window.location )' +
+		'}) });' +
 	'</script>' +
 '</html>';
 
