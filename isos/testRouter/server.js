@@ -43,6 +43,37 @@ server.route({
 	method: 'GET',
 	handler: function(request, reply) {
 		app.render();
+		app.router['/'].handler(app);
+		reply( $.html() );
+	}
+});
+
+server.route({
+	path: '/test-1',
+	method: 'GET',
+	handler: function(request, reply) {
+		app.render();
+		app.router['/test-1'].handler(app);
+		reply( $.html() );
+	}
+});
+
+server.route({
+	path: '/test-2',
+	method: 'GET',
+	handler: function(request, reply) {
+		app.render();
+		app.router['/test-2'].handler(app);
+		reply( $.html() );
+	}
+});
+
+server.route({
+	path: '/test-3',
+	method: 'GET',
+	handler: function(request, reply) {
+		app.render();
+		app.router['/test-3'].handler(app);
 		reply( $.html() );
 	}
 });

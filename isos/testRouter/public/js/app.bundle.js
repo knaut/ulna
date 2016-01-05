@@ -18749,12 +18749,12 @@ module.exports = dispatcher;
 var Services = require('../../../../../modules/services.js');
 
 var services = new Services({
-	nav: [
-		'home',
-		'test1',
-		'test2',
-		'test4'
-	],
+	// nav: [
+	// 	'home',
+	// 	'test1',
+	// 	'test2',
+	// 	'test4'
+	// ],
 	main: {
 		home: {
 			title: 'Welcome to home',
@@ -18806,6 +18806,7 @@ _.templateSettings = {
 
 var Component = function(obj) {
 	// type checking for nerve templates
+	this.renderCount = 0;
 	this.type = 'component';
 	this.children = [];
 	this.normalized = null;
@@ -18912,6 +18913,8 @@ var methods = {
 	},
 
 	render: function() {
+		this.renderCount += 1;
+
 		this.unbindEvents();
 
 		this.derenderChildren();
@@ -18954,6 +18957,7 @@ var methods = {
 		
 		for (var c = 0; this.children.length > c; c++) {			
 			var query = this.children[c].query;
+			console.log(query, this.children[c])
 			var childKey = Object.keys(query)[0];
 			queries[childKey] = query[childKey];
 		}

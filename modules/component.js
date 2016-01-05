@@ -161,6 +161,7 @@ var methods = {
 		
 		for (var c = 0; this.children.length > c; c++) {			
 			var query = this.children[c].query;
+			console.log(query, this.children[c])
 			var childKey = Object.keys(query)[0];
 			queries[childKey] = query[childKey];
 		}

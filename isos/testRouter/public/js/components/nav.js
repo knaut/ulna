@@ -14,9 +14,9 @@ var nav = new Component({
 		]
 	},
 
-	// query: {
-	// 	nav: 'array'
-	// },
+	query: {
+		nav: 'array'
+	},
 
 	template: {
 		ul: function() {
