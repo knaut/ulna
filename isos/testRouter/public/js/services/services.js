@@ -1,28 +1,12 @@
 var Services = require('../../../../../modules/services.js');
 
 var services = new Services({
-	nav: {
-		home: {
-			url: '/',
-			title: 'home',
-			name: 'home'
-		},
-		test1: {
-			url: '/test-1',
-			title: 'test-1',
-			name: 'test1'
-		},
-		test2: {
-			url: '/test-2',
-			title: 'test-2',
-			name: 'test2'
-		},
-		test3: {
-			url: '/test-3',
-			title: 'test-3',
-			name: 'test3'
-		}
-	},
+	// nav: [
+	// 	'home',
+	// 	'test1',
+	// 	'test2',
+	// 	'test4'
+	// ],
 	main: {
 		home: {
 			title: 'Welcome to home',
@@ -38,7 +22,21 @@ var services = new Services({
 		},
 		test3: {
 			title: 'Welcome to test 3',
-			content: 'not sure what just happened to me'
+			content: 'not sure what just happened to me',
+			wildcards: {
+				wild1: {
+					title: 'Welcome to wild 1',
+					content: 'not sure what just happened to me BLAHBALH'
+				},
+				foobar: {
+					title: 'Welcome to foobar',
+					content: 'not sure about anything'
+				},
+				snafu: {
+					title: 'Welcome to snafue',
+					content: 'its spectacular'
+				}
+			}
 		}
 	}
 });

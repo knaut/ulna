@@ -18515,9 +18515,11 @@ var Router = Component.extend({
 
 	history: {
 		replace: function( obj ) {
+			document.title = obj.title;
 			history.pushState(obj, obj.title, obj.url);	
 		},
 		push: function( obj ) {
+			document.title = obj.title;
 			history.replaceState(obj, obj.title, obj.url);
 		}
 	}
@@ -18550,6 +18552,7 @@ var main = require('./components/main.js');
 app = new Router({
 	root: '#app-root',
 	dispatcher: dispatcher,
+	services: services,
 
 	template: {
 		nav: nav,
@@ -18585,18 +18588,41 @@ app = new Router({
 	},
 
 	router: {
-		'/': function( component ) {
-			var queries = component.getChildQueries();
-			console.log(queries)
+		'/': {
+			name: 'home',
+			title: 'testRouter Home',
+			handler: function( component ) {
+				var queries = component.getChildQueries();
+				var props = component.services.queryServices(queries, this.name);
+				component.setQueriedChildProps( props );
+			}
 		},
-		'/test-1': function( component ) {
-			
+		'/test-1': {
+			name: 'test1',
+			title: 'testRouter - test1',
+			handler: function( component ) {
+				var queries = component.getChildQueries();
+				var props = component.services.queryServices(queries, this.name);
+				component.setQueriedChildProps( props );
+			}
 		},
-		'/test-2': function( component ) {
-			
+		'/test-2': {
+			name: 'test2',
+			title: 'testRouter - test2',
+			handler: function( component ) {
+				var queries = component.getChildQueries();
+				var props = component.services.queryServices(queries, this.name);
+				component.setQueriedChildProps( props );
+			}
 		},
-		'/test-3': function( component ) {
-			
+		'/test-3': {
+			name: 'test3',
+			title: 'testRouter - test3',
+			handler: function( component ) {
+				var queries = component.getChildQueries();
+				var props = component.services.queryServices(queries, this.name);
+				component.setQueriedChildProps( props );
+			}
 		},
 	 	'/test-3/*': function( component ) {}
 	}
@@ -18723,28 +18749,12 @@ module.exports = dispatcher;
 var Services = require('../../../../../modules/services.js');
 
 var services = new Services({
-	nav: {
-		home: {
-			url: '/',
-			title: 'home',
-			name: 'home'
-		},
-		test1: {
-			url: '/test-1',
-			title: 'test-1',
-			name: 'test1'
-		},
-		test2: {
-			url: '/test-2',
-			title: 'test-2',
-			name: 'test2'
-		},
-		test3: {
-			url: '/test-3',
-			title: 'test-3',
-			name: 'test3'
-		}
-	},
+	nav: [
+		'home',
+		'test1',
+		'test2',
+		'test4'
+	],
 	main: {
 		home: {
 			title: 'Welcome to home',
@@ -18760,7 +18770,21 @@ var services = new Services({
 		},
 		test3: {
 			title: 'Welcome to test 3',
-			content: 'not sure what just happened to me'
+			content: 'not sure what just happened to me',
+			wildcards: {
+				wild1: {
+					title: 'Welcome to wild 1',
+					content: 'not sure what just happened to me BLAHBALH'
+				},
+				foobar: {
+					title: 'Welcome to foobar',
+					content: 'not sure about anything'
+				},
+				snafu: {
+					title: 'Welcome to snafue',
+					content: 'its spectacular'
+				}
+			}
 		}
 	}
 });
@@ -18877,6 +18901,7 @@ var methods = {
 	},
 
 	setProps: function(obj) {
+		console.log(obj)
 		if (obj) {
 			for (var prop in this.props) {
 				this.props[prop] = obj[prop];
@@ -18934,6 +18959,17 @@ var methods = {
 		}
 
 		return queries;
+	},
+
+	setQueriedChildProps: function( props ) {
+		for (var c = 0; this.children.length > c; c++) {
+			var childKey = Object.keys( this.children[c].query )[0]
+			for (var key in props) {
+				if (key === childKey) {
+					this.children[c].setProps( props[key] )
+				}
+			}
+		}
 	}
 }
 
@@ -19432,13 +19468,54 @@ var Services = (function() {
 	}
 
 	Services.prototype = { 
-		clone: function( key ) {
-			var clone = {};
-			clone[key] = this[key];
-			return clone;
-		},
-		getByKey: function( key ) {
-			return this[key];
+		queryServices: function( queries, routeName) {
+			// take a hash of queries
+			// assume the first keys are child names, 
+			// subprops are route keys, and further subprops are the props we want
+			// based on a given route.
+
+			// we push props based on the query. if the query doesn't describe it, we don't
+			// return it.
+
+			var props = {};
+
+			// console.log(queries, routeName);
+
+			var childKeys = Object.keys(this);
+
+			for (var c = 0; childKeys.length > c; c++) {
+
+				var childKey = childKeys[c];
+
+				if ( this[childKey] ) {
+					
+					var routes = this[childKey];
+					var routeKeys = Object.keys(routes);
+
+					for (var r = 0; routeKeys.length > r; r++) {
+						var routeKey = routeKeys[r];
+
+						if (routeKey === routeName) {
+
+							var routeProps = routes[routeKey];
+							var routePropKeys = Object.keys( routeProps );
+
+							for (var p = 0; routePropKeys.length > p; p++ ) {
+								
+								var routePropKey = routePropKeys[p];
+
+								// we block out wildcard sub-routes here
+								if (routePropKey !== 'wildcards') {
+									var routeProp = routeProps[routePropKey];
+									props[childKey] = routeProps;
+								}
+							}
+						}
+					}
+				}
+			}
+			// console.log('props', props)
+			return props;
 		}
 	}
 

@@ -53,9 +53,11 @@ var Router = Component.extend({
 
 	history: {
 		replace: function( obj ) {
+			document.title = obj.title;
 			history.pushState(obj, obj.title, obj.url);	
 		},
 		push: function( obj ) {
+			document.title = obj.title;
 			history.replaceState(obj, obj.title, obj.url);
 		}
 	}

@@ -22,6 +22,7 @@ var main = require('./components/main.js');
 app = new Router({
 	root: '#app-root',
 	dispatcher: dispatcher,
+	services: services,
 
 	template: {
 		nav: nav,
@@ -57,18 +58,41 @@ app = new Router({
 	},
 
 	router: {
-		'/': function( component ) {
-			var queries = component.getChildQueries();
-			
+		'/': {
+			name: 'home',
+			title: 'testRouter Home',
+			handler: function( component ) {
+				var queries = component.getChildQueries();
+				var props = component.services.queryServices(queries, this.name);
+				component.setQueriedChildProps( props );
+			}
 		},
-		'/test-1': function( component ) {
-			
+		'/test-1': {
+			name: 'test1',
+			title: 'testRouter - test1',
+			handler: function( component ) {
+				var queries = component.getChildQueries();
+				var props = component.services.queryServices(queries, this.name);
+				component.setQueriedChildProps( props );
+			}
 		},
-		'/test-2': function( component ) {
-			
+		'/test-2': {
+			name: 'test2',
+			title: 'testRouter - test2',
+			handler: function( component ) {
+				var queries = component.getChildQueries();
+				var props = component.services.queryServices(queries, this.name);
+				component.setQueriedChildProps( props );
+			}
 		},
-		'/test-3': function( component ) {
-			
+		'/test-3': {
+			name: 'test3',
+			title: 'testRouter - test3',
+			handler: function( component ) {
+				var queries = component.getChildQueries();
+				var props = component.services.queryServices(queries, this.name);
+				component.setQueriedChildProps( props );
+			}
 		},
 	 	'/test-3/*': function( component ) {}
 	}

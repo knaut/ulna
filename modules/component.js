@@ -108,6 +108,7 @@ var methods = {
 	},
 
 	setProps: function(obj) {
+		console.log(obj)
 		if (obj) {
 			for (var prop in this.props) {
 				this.props[prop] = obj[prop];
@@ -165,6 +166,17 @@ var methods = {
 		}
 
 		return queries;
+	},
+
+	setQueriedChildProps: function( props ) {
+		for (var c = 0; this.children.length > c; c++) {
+			var childKey = Object.keys( this.children[c].query )[0]
+			for (var key in props) {
+				if (key === childKey) {
+					this.children[c].setProps( props[key] )
+				}
+			}
+		}
 	}
 }
 
