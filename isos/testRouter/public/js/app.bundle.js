@@ -18716,7 +18716,8 @@ var nav = new Component({
 
 	template: {
 		ul: function() {
-			for (n = 0; nav.length > n; n++) {
+			for (var n = 0; nav.length > n; n++) {
+				console.log(nav[n])
 				return {
 					li: '~~nav[n]~~'
 				}
@@ -18806,7 +18807,6 @@ _.templateSettings = {
 
 var Component = function(obj) {
 	// type checking for nerve templates
-	this.renderCount = 0;
 	this.type = 'component';
 	this.children = [];
 	this.normalized = null;
@@ -18913,8 +18913,6 @@ var methods = {
 	},
 
 	render: function() {
-		this.renderCount += 1;
-
 		this.unbindEvents();
 
 		this.derenderChildren();
@@ -19838,7 +19836,7 @@ var parseFunctions = function( nerve ) {
 
 				// we re-use the src to extrapolate where the returned blocks should go
 				// console.log(srcBody[i]);
-				var trimmedSrcBody = srcBody[i].replace(/\s/g, '');
+				var trimmedSrcBody = srcBody[i].replace(/\t|\s{2,}|\n/g, ' ');
 				// console.log(trimmedSrcBody)
 
 				slicedReturnBlocks.push( this.sliceReturnBlock( trimmedSrcBody ) );
@@ -19850,7 +19848,8 @@ var parseFunctions = function( nerve ) {
 			var script = func.toString();
 
 			// lose the whitespace
-			script = script.replace(/\s/g, "");
+			// console.log(script)
+			script = script.replace(/\t|\s{2,}|\n/g, ' ');
 			script = script.split( rgfuncHead )[1];
 			script = script.split( rgfuncTail )[0];
 

@@ -7,6 +7,30 @@ var services = new Services({
 	// 	'test2',
 	// 	'test4'
 	// ],
+
+	nav: {
+		about: {
+			ref: '/about',
+			title: 'About'
+		},
+		gallery: {
+			ref: '/gallery',
+			title: 'Gallery',
+			wildcards: {
+				photo1: {
+					ref: '/photo-1',
+					title: 'Photo 1',
+					content: 'Some amazing photo'
+				},
+				photo1: {
+					ref: '/photo-2',
+					title: 'Photo 2',
+					content: 'Another amazing photo'
+				}
+			}
+		}
+	}
+
 	main: {
 		home: {
 			title: 'Welcome to home',
