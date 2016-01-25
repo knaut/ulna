@@ -1,18 +1,18 @@
 {
   "name": "Ulna",
-  "version": "0.0.2",
-  "description": "the midnight SPA framework",
+  "version": "0.0.1",
+  "description": "a midnight framework for universal single-page apps",
   "repository": "",
   "author": "knaut",
-  "license": "BSD",
+  "license": "MIT",
   "dependencies": {
-    "grunt": "~0.4.5",
-    "hapi": "^11.1.4",
     "jquery": "*",
-    "nerve-templates": "0.0.3",
-    "underscore": "^1.8.3"
+    "underscore": "*",
+    "nerve-templates": "0.0.3"
   },
   "devDependencies": {
-    "grunt-browserify": "^4.0.0"
+    "grunt": "~0.4.5",
+    "grunt-browserify": "^4.0.0",
+    "grunt-contrib-watch": "^0.6.1"
   }
 }

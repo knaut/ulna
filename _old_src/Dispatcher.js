@@ -1,5 +1,5 @@
-var underscore = require('underscore');
-var Events = require('./events.js');
+var extend = require('./extend');
+var Events = require('./Events');
 
 var Dispatcher = function(options) {
 	if (options && options.actions) {
@@ -15,20 +15,20 @@ var Dispatcher = function(options) {
 		value: {}
 	});
 
-	underscore.extend(this._actions, Events);
+	_.extend(this._actions, Events);
 
 	this.initialize.apply(this, arguments);
-}
+};
 
 Dispatcher.prototype = {
 	initialize: function() {},
 
 	_prepareAction: function(name, callbacks) {
 		var action = {};
-		if (underscore.isString(name)) {
+		if (_.isString(name)) {
 			action.name = name;
 			if (callbacks) {
-				if (underscore.isFunction(callbacks)) {
+				if (_.isFunction(callbacks)) {
 					action.beforeEmit = callbacks;
 				} else {
 					for (var c in callbacks) {
@@ -104,12 +104,12 @@ Dispatcher.prototype = {
 	registerStore: function(actions, listener, methods) {
 		var isUniqueCallback = (typeof methods) === 'string' || (typeof methods) === 'function';
 		var actionsNames;
-		if (underscore.isArray(actions)) {
+		if (_.isArray(actions)) {
 			methods = methods || actions;
 			if (!isUniqueCallback && actions.length !== methods.length) {
 				throw new RangeError('The # of callbacks differs from the # of action names!');
 			}
-		} else if (underscore.isObject(actions)) {
+		} else if (_.isObject(actions)) {
 			actionsNames = Object.keys(actions);
 			methods = actionsNames.map(function(actionName) {
 				return actions[actionName];
@@ -133,5 +133,7 @@ Dispatcher.prototype = {
 		this._actions.trigger(actionName, payload);
 	}
 };
+
+Dispatcher.extend = extend;
 
 module.exports = Dispatcher;
