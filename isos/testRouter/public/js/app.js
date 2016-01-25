@@ -17,8 +17,10 @@ var Router = require('./Router.js');
 var nav = require('./components/nav.js');
 var main = require('./components/main.js');
 
-// expose the app as a global root we can access later if desired
 
+
+// expose the app as a global root we can access later if desired
+// console.log(nav)
 app = new Router({
 	root: '#app-root',
 	dispatcher: dispatcher,

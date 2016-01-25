@@ -108,7 +108,7 @@ var methods = {
 	},
 
 	setProps: function(obj) {
-		console.log(obj)
+		// console.log(obj)
 		if (obj) {
 			for (var prop in this.props) {
 				this.props[prop] = obj[prop];
@@ -129,6 +129,8 @@ var methods = {
 
 		var string = this.nerve.stringify.normalized(this.normalized);
 
+		console.log(string)
+		
 		var template = _.template(string);
 
 		var compiled = template(this.props);
@@ -161,7 +163,7 @@ var methods = {
 		
 		for (var c = 0; this.children.length > c; c++) {			
 			var query = this.children[c].query;
-			console.log(query, this.children[c])
+			// console.log(query, this.children[c])
 			var childKey = Object.keys(query)[0];
 			queries[childKey] = query[childKey];
 		}

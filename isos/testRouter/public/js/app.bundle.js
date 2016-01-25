@@ -1651,7 +1651,7 @@ exports.update = function(arr, parent) {
 // module.exports = $.extend(exports);
 
 }).call(this,{"isBuffer":require("../../../../../../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js")})
-},{"../../../../../../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js":93,"htmlparser2":49}],10:[function(require,module,exports){
+},{"../../../../../../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js":94,"htmlparser2":49}],10:[function(require,module,exports){
 /**
  * Module dependencies
  */
@@ -4384,7 +4384,7 @@ FeedHandler.prototype.onend = function(){
 
 module.exports = FeedHandler;
 
-},{"./index.js":49,"util":111}],44:[function(require,module,exports){
+},{"./index.js":49,"util":112}],44:[function(require,module,exports){
 var Tokenizer = require("./Tokenizer.js");
 
 /*
@@ -4736,7 +4736,7 @@ Parser.prototype.done = Parser.prototype.end;
 
 module.exports = Parser;
 
-},{"./Tokenizer.js":47,"events":90,"util":111}],45:[function(require,module,exports){
+},{"./Tokenizer.js":47,"events":91,"util":112}],45:[function(require,module,exports){
 module.exports = ProxyHandler;
 
 function ProxyHandler(cbs){
@@ -4800,7 +4800,7 @@ Object.keys(EVENTS).forEach(function(name){
 		throw Error("wrong number of arguments!");
 	}
 });
-},{"../":49,"./WritableStream.js":48,"util":111}],47:[function(require,module,exports){
+},{"../":49,"./WritableStream.js":48,"util":112}],47:[function(require,module,exports){
 module.exports = Tokenizer;
 
 var decodeCodePoint = require("entities/lib/decode_codepoint.js"),
@@ -5730,7 +5730,7 @@ WritableStream.prototype._write = function(chunk, encoding, cb){
 	this._parser.write(chunk);
 	cb();
 };
-},{"./Parser.js":44,"readable-stream":86,"stream":107,"util":111}],49:[function(require,module,exports){
+},{"./Parser.js":44,"readable-stream":87,"stream":108,"util":112}],49:[function(require,module,exports){
 var Parser = require("./Parser.js"),
     DomHandler = require("domhandler");
 
@@ -18527,7 +18527,7 @@ var Router = Component.extend({
 
 
 module.exports = Router;
-},{"../../../../modules/component.js":73}],67:[function(require,module,exports){
+},{"../../../../modules/component.js":74}],67:[function(require,module,exports){
 // hack
 // jquery overrules $ in order of ops clientside
 // declaring this here fixes it for server though
@@ -18547,8 +18547,10 @@ var Router = require('./Router.js');
 var nav = require('./components/nav.js');
 var main = require('./components/main.js');
 
-// expose the app as a global root we can access later if desired
 
+
+// expose the app as a global root we can access later if desired
+// console.log(nav)
 app = new Router({
 	root: '#app-root',
 	dispatcher: dispatcher,
@@ -18631,7 +18633,7 @@ app = new Router({
 
 
 module.exports = app;
-},{"../../../../modules/component.js":73,"./Router.js":66,"./appHead.js":68,"./components/main.js":69,"./components/nav.js":70,"./dispatcher.js":71,"./services/services.js":72}],68:[function(require,module,exports){
+},{"../../../../modules/component.js":74,"./Router.js":66,"./appHead.js":68,"./components/main.js":70,"./components/nav.js":71,"./dispatcher.js":72,"./services/services.js":73}],68:[function(require,module,exports){
 var Cheerio = require('cheerio');
 
 var appHead = '<!DOCTYPE html>' +
@@ -18656,6 +18658,28 @@ var $ = Cheerio.load( appHead );
 
 module.exports = $;
 },{"cheerio":2}],69:[function(require,module,exports){
+var Component = require('../../../../../modules/component.js');
+var dispatcher = require('../dispatcher.js');
+var services = require('../services/services.js');
+
+var item = new Component({
+	root: 'li',
+	dispatcher: dispatcher,
+
+	template: {
+		'a': 'title'
+	},
+	// events: {
+	// 	'click li': function(event) {
+	// 		this.dispatcher.dispatch('ROUTE_CHANGE', {
+	// 			data: event.target.innerText
+	// 		});
+	// 	}
+	// }
+});
+
+module.exports = item;
+},{"../../../../../modules/component.js":74,"../dispatcher.js":72,"../services/services.js":73}],70:[function(require,module,exports){
 var Component = require('../../../../../modules/component.js');
 var dispatcher = require('../dispatcher.js');
 var services = require('../services/services.js');
@@ -18693,36 +18717,36 @@ var main = new Component({
 });
 
 module.exports = main;
-},{"../../../../../modules/component.js":73,"../dispatcher.js":71,"../services/services.js":72,"./nav.js":70}],70:[function(require,module,exports){
+},{"../../../../../modules/component.js":74,"../dispatcher.js":72,"../services/services.js":73,"./nav.js":71}],71:[function(require,module,exports){
 var Component = require('../../../../../modules/component.js');
 var dispatcher = require('../dispatcher.js');
+var services = require('../services/services.js');
+
+var item = require('./item.js');
 
 var nav = new Component({
 	root: 'nav',
 	dispatcher: dispatcher,
 
 	props: {
-		nav: [
-			'home',
-			'test1',
-			'test2',
-			'test3'
-		]
+		nav: services.nav
 	},
 
 	query: {
-		nav: 'array'
+		nav: 'object'
 	},
 
 	template: {
-		ul: function() {
-			for (var n = 0; nav.length > n; n++) {
-				console.log(nav[n])
-				return {
-					li: '~~nav[n]~~'
-				}
-			}
-		}
+		div: item
+		// ul: function() {
+		// 	for (var i in nav) {
+		// 		return {
+		// 			li: {
+		// 				'a': item
+		// 			}
+		// 		}
+		// 	}
+		// }
 	},
 
 	events: {
@@ -18735,7 +18759,7 @@ var nav = new Component({
 });
 
 module.exports = nav;
-},{"../../../../../modules/component.js":73,"../dispatcher.js":71}],71:[function(require,module,exports){
+},{"../../../../../modules/component.js":74,"../dispatcher.js":72,"../services/services.js":73,"./item.js":69}],72:[function(require,module,exports){
 var Dispatcher = require('../../../../modules/dispatcher.js');
 
 var dispatcher = new Dispatcher({
@@ -18746,7 +18770,7 @@ var dispatcher = new Dispatcher({
 });
 
 module.exports = dispatcher;
-},{"../../../../modules/dispatcher.js":74}],72:[function(require,module,exports){
+},{"../../../../modules/dispatcher.js":75}],73:[function(require,module,exports){
 var Services = require('../../../../../modules/services.js');
 
 var services = new Services({
@@ -18756,42 +18780,42 @@ var services = new Services({
 	// 	'test2',
 	// 	'test4'
 	// ],
+
+	nav: {
+		about: {
+			title: 'About',
+			href: '/about'
+		},
+		gallery: {
+			title: 'Gallery',
+			href: '/gallery',
+			items: {
+				photo1: {
+					title: 'Photo 1',
+					href: '/gallery/photo-1'
+				},
+				photo1: {
+					title: 'Photo 2',
+					href: '/gallery/photo-2'
+				}
+			}
+		}
+	},
+
 	main: {
-		home: {
+		about: {
 			title: 'Welcome to home',
 			content: 'its cold tonight wow'
 		},
-		test1: {
-			title: 'Welcome to test 1',
-			content: 'we have much needed wares here'
-		},
-		test2: {
-			title: 'Welcome to test 2',
-			content: 'faruk has rug if you have coin'
-		},
-		test3: {
-			title: 'Welcome to test 3',
-			content: 'not sure what just happened to me',
-			wildcards: {
-				wild1: {
-					title: 'Welcome to wild 1',
-					content: 'not sure what just happened to me BLAHBALH'
-				},
-				foobar: {
-					title: 'Welcome to foobar',
-					content: 'not sure about anything'
-				},
-				snafu: {
-					title: 'Welcome to snafue',
-					content: 'its spectacular'
-				}
-			}
+		gallery: {
+			title: 'this is a gallery',
+			content: 'we have lots of cool things'
 		}
 	}
 });
 
 module.exports = services;
-},{"../../../../../modules/services.js":77}],73:[function(require,module,exports){
+},{"../../../../../modules/services.js":78}],74:[function(require,module,exports){
 if (typeof Nerve === 'undefined') {
 	var Nerve = require('nerve-templates');
 }
@@ -18902,7 +18926,7 @@ var methods = {
 	},
 
 	setProps: function(obj) {
-		console.log(obj)
+		// console.log(obj)
 		if (obj) {
 			for (var prop in this.props) {
 				this.props[prop] = obj[prop];
@@ -18923,6 +18947,8 @@ var methods = {
 
 		var string = this.nerve.stringify.normalized(this.normalized);
 
+		console.log(string)
+		
 		var template = _.template(string);
 
 		var compiled = template(this.props);
@@ -18955,7 +18981,7 @@ var methods = {
 		
 		for (var c = 0; this.children.length > c; c++) {			
 			var query = this.children[c].query;
-			console.log(query, this.children[c])
+			// console.log(query, this.children[c])
 			var childKey = Object.keys(query)[0];
 			queries[childKey] = query[childKey];
 		}
@@ -18980,7 +19006,7 @@ _.extend(Component.prototype, methods);
 Component.extend = extend;
 
 module.exports = Component;
-},{"./extend.js":76,"nerve-templates":78,"underscore":84}],74:[function(require,module,exports){
+},{"./extend.js":77,"nerve-templates":79,"underscore":85}],75:[function(require,module,exports){
 var Dispatcher = (function() {
 
 	var underscore = require('underscore');
@@ -19127,7 +19153,7 @@ var Dispatcher = (function() {
 })();
 
 
-},{"./events.js":75,"underscore":84}],75:[function(require,module,exports){
+},{"./events.js":76,"underscore":85}],76:[function(require,module,exports){
 var Events = (function() {
 	// Events, stolen from Backbone
 
@@ -19426,7 +19452,7 @@ var Events = (function() {
 	module.exports = Events;
 
 })();
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 var _ = require('underscore');
 
 var extend = function(protoProps, staticProps) {
@@ -19460,7 +19486,7 @@ var extend = function(protoProps, staticProps) {
 };
 
 module.exports = extend;
-},{"underscore":84}],77:[function(require,module,exports){
+},{"underscore":85}],78:[function(require,module,exports){
 var Services = (function() {
 
 	var Services = function( data ) {
@@ -19526,7 +19552,7 @@ var Services = (function() {
 })();
 
 
-},{}],78:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 var parseFunctions = require('./modules/parseFunctions.js');
 var parseCSSKey = require('./modules/parseCSSKey.js');
 var normalize = require('./modules/normalize');
@@ -19551,7 +19577,7 @@ var Nerve = function( component ) {
 console.log('Nerve Templates:', new Nerve())
 
 exports.Nerve = Nerve;
-},{"./modules/normalize":79,"./modules/parseCSSKey.js":80,"./modules/parseFunctions.js":81,"./modules/stringify":82,"./modules/toType":83}],79:[function(require,module,exports){
+},{"./modules/normalize":80,"./modules/parseCSSKey.js":81,"./modules/parseFunctions.js":82,"./modules/stringify":83,"./modules/toType":84}],80:[function(require,module,exports){
 var normalize = function( nerve ) {
 	// take a nerve template of static css selectors
 	// and normalize it as a nested structure
@@ -19586,10 +19612,10 @@ var normalize = function( nerve ) {
 	*/
 
 	return function( struct ) {
-
+		// console.log( struct )
 		var normalized = [];
 
-		switch( nerve.toType(struct) ) {
+		switch( this.toType(struct) ) {
 			case 'string':
 				return struct;
 			break;
@@ -19628,20 +19654,19 @@ var normalize = function( nerve ) {
 				normalized.push( nerve.parse.functions.normalize( struct ) );
 			break;
 			case 'component':
-
+				console.log('component', struct);
 				struct['parent'] = nerve.component;
 
 				nerve.component.children.push( struct );
 			break;
 		}
-
 		return normalized;
 
 	}
 }
 
 module.exports = normalize;
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 var parseCSSKey = function( nerve ) {
 
 	return {
@@ -19800,11 +19825,12 @@ var parseCSSKey = function( nerve ) {
 };
 
 module.exports = parseCSSKey
-},{}],81:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 var parseFunctions = function( nerve ) {
 
 	return {
 		normalize: function( func ) {
+			console.log('func', func)
 			var rgfuncHead = /^function\s*[(][)]\s*[{]\s*/;	// eg 'function() { …'
 			var rgfuncTail = /\s*[}]{1}\s*$/;		// eg last } bracket of the function
 			var rgfuncReturns = /return\s*/;
@@ -19862,7 +19888,7 @@ var parseFunctions = function( nerve ) {
 				src: script,
 				inner: normalizedReturnBlocks
 			}
-
+			console.log(parsedFunc)
 			return parsedFunc;
 		},
 
@@ -19884,11 +19910,19 @@ var parseFunctions = function( nerve ) {
 
 			// these are string types instead of real objects
 			// we'll create a function that gives them to us -- eval workaround
+
+			// this causes issues with components nested in functions
+			// console.log( eval('var a = ' + slicedBlocks) )
+			// console.log( nerve.normalize( eval( slicedBlocks ) ) )
+			// console.log('fejiao')
+			// console.log(nerve.normalize)
 			var destringifySrc = new Function('return ' + slicedBlocks);
+			console.log('slicedBlocks', nerve.normalize(slicedBlocks))
+			console.log(this, destringifySrc)
 
 			// from here we can hand the objects on as normal.
 			// normalize returns an array by default, so we'll just return the contents
-			return nerve.normalize( destringifySrc() )[0];
+			// return nerve.normalize( destringifySrc() )[0];
 		},
 
 		// separate the return block from the rest of the code and return it
@@ -19943,7 +19977,7 @@ var parseFunctions = function( nerve ) {
 };
 
 module.exports = parseFunctions;
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 var stringify = function( nerve ) {
 
 	return {
@@ -20065,7 +20099,7 @@ var stringify = function( nerve ) {
 
 module.exports = stringify;
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 var toType = function(obj) {
 	// better type checking
 	// https://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
@@ -20077,7 +20111,7 @@ var toType = function(obj) {
 }
 
 module.exports = toType;
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -21627,7 +21661,7 @@ module.exports = toType;
   }
 }.call(this));
 
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -21753,9 +21787,9 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],86:[function(require,module,exports){
-
 },{}],87:[function(require,module,exports){
+
+},{}],88:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -23307,14 +23341,14 @@ function blitBuffer (src, dst, offset, length) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":85,"ieee754":91,"isarray":88}],88:[function(require,module,exports){
+},{"base64-js":86,"ieee754":92,"isarray":89}],89:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -23425,7 +23459,7 @@ function objectToString(o) {
 }
 
 }).call(this,{"isBuffer":require("../../is-buffer/index.js")})
-},{"../../is-buffer/index.js":93}],90:[function(require,module,exports){
+},{"../../is-buffer/index.js":94}],91:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -23725,7 +23759,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -23811,7 +23845,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],92:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -23836,7 +23870,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -23855,12 +23889,12 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -23884,7 +23918,7 @@ function nextTick(fn) {
 }
 
 }).call(this,require('_process'))
-},{"_process":96}],96:[function(require,module,exports){
+},{"_process":97}],97:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -23977,10 +24011,10 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 module.exports = require("./lib/_stream_duplex.js")
 
-},{"./lib/_stream_duplex.js":98}],98:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":99}],99:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
 // prototypally inherits from Readable, and then parasitically from
@@ -24064,7 +24098,7 @@ function forEach (xs, f) {
   }
 }
 
-},{"./_stream_readable":100,"./_stream_writable":102,"core-util-is":89,"inherits":92,"process-nextick-args":95}],99:[function(require,module,exports){
+},{"./_stream_readable":101,"./_stream_writable":103,"core-util-is":90,"inherits":93,"process-nextick-args":96}],100:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -24093,7 +24127,7 @@ PassThrough.prototype._transform = function(chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-},{"./_stream_transform":101,"core-util-is":89,"inherits":92}],100:[function(require,module,exports){
+},{"./_stream_transform":102,"core-util-is":90,"inherits":93}],101:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -25072,7 +25106,7 @@ function indexOf (xs, x) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":98,"_process":96,"buffer":87,"core-util-is":89,"events":90,"inherits":92,"isarray":94,"process-nextick-args":95,"string_decoder/":108,"util":86}],101:[function(require,module,exports){
+},{"./_stream_duplex":99,"_process":97,"buffer":88,"core-util-is":90,"events":91,"inherits":93,"isarray":95,"process-nextick-args":96,"string_decoder/":109,"util":87}],102:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -25271,7 +25305,7 @@ function done(stream, er) {
   return stream.push(null);
 }
 
-},{"./_stream_duplex":98,"core-util-is":89,"inherits":92}],102:[function(require,module,exports){
+},{"./_stream_duplex":99,"core-util-is":90,"inherits":93}],103:[function(require,module,exports){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
 // the drain event emission and buffering.
@@ -25802,10 +25836,10 @@ function endWritable(stream, state, cb) {
   state.ended = true;
 }
 
-},{"./_stream_duplex":98,"buffer":87,"core-util-is":89,"events":90,"inherits":92,"process-nextick-args":95,"util-deprecate":109}],103:[function(require,module,exports){
+},{"./_stream_duplex":99,"buffer":88,"core-util-is":90,"events":91,"inherits":93,"process-nextick-args":96,"util-deprecate":110}],104:[function(require,module,exports){
 module.exports = require("./lib/_stream_passthrough.js")
 
-},{"./lib/_stream_passthrough.js":99}],104:[function(require,module,exports){
+},{"./lib/_stream_passthrough.js":100}],105:[function(require,module,exports){
 var Stream = (function (){
   try {
     return require('st' + 'ream'); // hack to fix a circular dependency issue when used with browserify
@@ -25819,13 +25853,13 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":98,"./lib/_stream_passthrough.js":99,"./lib/_stream_readable.js":100,"./lib/_stream_transform.js":101,"./lib/_stream_writable.js":102}],105:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":99,"./lib/_stream_passthrough.js":100,"./lib/_stream_readable.js":101,"./lib/_stream_transform.js":102,"./lib/_stream_writable.js":103}],106:[function(require,module,exports){
 module.exports = require("./lib/_stream_transform.js")
 
-},{"./lib/_stream_transform.js":101}],106:[function(require,module,exports){
+},{"./lib/_stream_transform.js":102}],107:[function(require,module,exports){
 module.exports = require("./lib/_stream_writable.js")
 
-},{"./lib/_stream_writable.js":102}],107:[function(require,module,exports){
+},{"./lib/_stream_writable.js":103}],108:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -25954,7 +25988,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":90,"inherits":92,"readable-stream/duplex.js":97,"readable-stream/passthrough.js":103,"readable-stream/readable.js":104,"readable-stream/transform.js":105,"readable-stream/writable.js":106}],108:[function(require,module,exports){
+},{"events":91,"inherits":93,"readable-stream/duplex.js":98,"readable-stream/passthrough.js":104,"readable-stream/readable.js":105,"readable-stream/transform.js":106,"readable-stream/writable.js":107}],109:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -26177,7 +26211,7 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":87}],109:[function(require,module,exports){
+},{"buffer":88}],110:[function(require,module,exports){
 (function (global){
 
 /**
@@ -26248,14 +26282,14 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],110:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],111:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -26845,4 +26879,4 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":110,"_process":96,"inherits":92}]},{},[67]);
+},{"./support/isBuffer":111,"_process":97,"inherits":93}]},{},[67]);
