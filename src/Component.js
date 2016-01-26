@@ -30,20 +30,6 @@ methods = {
 	},
 
 	// DOM
-	bindToDOM: function() {
-		this.bindRoot();
-		this.bindEvents();
-
-		return this.eventsBound;
-	},
-
-	unbindFromDOM: function() {
-		this.unbindEvents();
-		this.unbindRoot();
-
-		return this.eventsBound;
-	},
-
 	bindRoot: function() {
 		this.$root = $(this.root);
 		
@@ -101,6 +87,20 @@ methods = {
 		return [eventString, selector];
 	},
 
+	bindToDOM: function() {
+		this.bindRoot();
+		this.bindEvents();
+
+		return this.eventsBound;
+	},
+
+	unbindFromDOM: function() {
+		this.unbindEvents();
+		this.unbindRoot();
+
+		return this.eventsBound;
+	},
+
 	render: function() {
 		return this.stringify.normalized( this.normalized );
 	},
@@ -117,12 +117,50 @@ methods = {
 		return this.$root;
 	},
 
+	rerender: function() {
+		// assume we are bound to the dom and recieved new data
+		// unbind, re-render template, then re-bind
+		this.unbindChildren();
+		this.unrenderChildrenFromDOM();
+
+		this.initialize();
+
+		this.renderToDOM();
+		this.bindEvents();
+		this.renderChildrenToDOM();
+
+		return this.$root;
+	},
+
 	// FLUX
 	bindListen: function() {
 		// backbone-style hashes for flux-style action configuration
 		for (var action in this.listen) {
 			this.dispatcher.register(action, this, this.listen[action].bind(this));
 		}
+	},
+
+	cloneData: function() {
+		var clone = {};
+
+		for (var prop in this.data) {
+			clone[prop] = this.data[prop];
+		}
+
+		return clone;
+	},
+
+	setData: function( obj ) {
+		var newData = {};
+		var currData = this.cloneData();
+
+		for (var prop in currData) {
+			newData[prop] = obj[prop];	
+		}
+
+		this.data = newData;
+
+		return this.data;
 	},
 
 	// CHILDREN
@@ -153,7 +191,9 @@ methods = {
 			this.children[c].bindRoot();
 			this.children[c].renderToDOM();
 			this.children[c].bindEvents();
-		}		
+		}
+
+		return this.$root;
 	},
 
 	unrenderChildrenFromDOM: function() {
@@ -163,7 +203,9 @@ methods = {
 			this.children[c].unbindEvents();
 			this.children[c].unrenderFromDOM();
 			this.children[c].unbindRoot();
-		}		
+		}
+
+		return this.$root;
 	}
 }
 

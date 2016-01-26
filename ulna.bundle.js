@@ -32,6 +32,9 @@ module.exports = function(struct) {
 		case 'string':
 			return struct;
 			break;
+		case 'number':
+			return struct;
+			break;
 		case 'array':
 
 			// for component based library (Ulna), check if we're mixed into the component
@@ -95,11 +98,6 @@ module.exports = function(struct) {
 
 			// for components we push a parent reference
 			struct['parent'] = this;
-
-			// nested components on first load won't be normalized
-			// if (!struct.normalized) {
-			// 	struct.normalized = this.normalize( struct.templates );
-			// }
 
 			// assuming refactored Ulna api
 			// we push to a children array for convenient references
@@ -284,17 +282,9 @@ module.exports = {
 				case 'object':
 					string += this.object(normalized[n]);
 					break;
-				case 'string':
-					console.log('let me know', normalized);
-					break;
 				case 'component':
-				
 					// seriously
 					string += this.normalized( normalized[n].normalized );
-
-					break;
-				case 'array':
-					console.log('array', normalized)
 					break;
 			}
 		}
@@ -316,35 +306,6 @@ module.exports = {
 		}
 		return string;
 	},
-
-	// deprecating
-	// func: function(obj) {
-	// 	// can be moved to a global config later
-	// 	var delimiters = {
-	// 		evaluate: ['<<', '>>'],
-	// 		interpolate: ['~~', '~~'],
-	// 		escape: ['--', '--'],
-	// 		srcBreak: '%break%'
-	// 	}
-
-	// 	var splitSrc = obj.src.split(delimiters.srcBreak);
-
-	// 	var string = '';
-
-	// 	// we loop based on the number of returned inner blocks
-	// 	for (var s = 0; obj.inner.length > s; s++) {
-	// 		// enclose the split src strings in evaluation brackets
-	// 		string += delimiters.evaluate[0] + splitSrc[s] + delimiters.evaluate[1];
-
-	// 		// we don't use stringify() here because that will cause unnecessary nested loops
-	// 		// we also know its type, so we can stringify it directly
-	// 		string += this.html(obj.inner[s]);
-	// 	}
-	// 	// we can assume there will be an ending bracket in most control structures
-	// 	string += delimiters.evaluate[0] + splitSrc[s] + delimiters.evaluate[1];
-
-	// 	return string;
-	// },
 
 	html: function(obj) {
 		var string = '<' + obj.tagName;
@@ -383,10 +344,10 @@ module.exports = {
 
 		// end the opening tag
 		string += '>';
-
-		if (obj.hasOwnProperty('inner') && obj.inner.length && nerve.toType(obj.inner) !== 'string') {
+		var innerType = nerve.toType(obj.inner);
+		if (obj.hasOwnProperty('inner') && innerType === 'array' && innerType !== 'string') {
 			string += this.normalized(obj.inner);
-		} else if (nerve.toType(obj.inner) === 'string') {
+		} else if (innerType === 'string' || innerType === 'number') {
 			string += obj.inner;
 		}
 
@@ -1988,20 +1949,6 @@ methods = {
 	},
 
 	// DOM
-	bindToDOM: function() {
-		this.bindRoot();
-		this.bindEvents();
-
-		return this.eventsBound;
-	},
-
-	unbindFromDOM: function() {
-		this.unbindEvents();
-		this.unbindRoot();
-
-		return this.eventsBound;
-	},
-
 	bindRoot: function() {
 		this.$root = $(this.root);
 		
@@ -2059,6 +2006,20 @@ methods = {
 		return [eventString, selector];
 	},
 
+	bindToDOM: function() {
+		this.bindRoot();
+		this.bindEvents();
+
+		return this.eventsBound;
+	},
+
+	unbindFromDOM: function() {
+		this.unbindEvents();
+		this.unbindRoot();
+
+		return this.eventsBound;
+	},
+
 	render: function() {
 		return this.stringify.normalized( this.normalized );
 	},
@@ -2075,12 +2036,50 @@ methods = {
 		return this.$root;
 	},
 
+	rerender: function() {
+		// assume we are bound to the dom and recieved new data
+		// unbind, re-render template, then re-bind
+		this.unbindChildren();
+		this.unrenderChildrenFromDOM();
+
+		this.initialize();
+
+		this.renderToDOM();
+		this.bindEvents();
+		this.renderChildrenToDOM();
+
+		return this.$root;
+	},
+
 	// FLUX
 	bindListen: function() {
 		// backbone-style hashes for flux-style action configuration
 		for (var action in this.listen) {
 			this.dispatcher.register(action, this, this.listen[action].bind(this));
 		}
+	},
+
+	cloneData: function() {
+		var clone = {};
+
+		for (var prop in this.data) {
+			clone[prop] = this.data[prop];
+		}
+
+		return clone;
+	},
+
+	setData: function( obj ) {
+		var newData = {};
+		var currData = this.cloneData();
+
+		for (var prop in currData) {
+			newData[prop] = obj[prop];	
+		}
+
+		this.data = newData;
+
+		return this.data;
 	},
 
 	// CHILDREN
@@ -2111,7 +2110,9 @@ methods = {
 			this.children[c].bindRoot();
 			this.children[c].renderToDOM();
 			this.children[c].bindEvents();
-		}		
+		}
+
+		return this.$root;
 	},
 
 	unrenderChildrenFromDOM: function() {
@@ -2121,7 +2122,9 @@ methods = {
 			this.children[c].unbindEvents();
 			this.children[c].unrenderFromDOM();
 			this.children[c].unbindRoot();
-		}		
+		}
+
+		return this.$root;
 	}
 }
 
