@@ -97,9 +97,9 @@ module.exports = function(struct) {
 			struct['parent'] = this;
 
 			// nested components on first load won't be normalized
-			if (!struct.normalized) {
-				struct.normalized = this.normalize( struct.template );
-			}
+			// if (!struct.normalized) {
+			// 	struct.normalized = this.normalize( struct.templates );
+			// }
 
 			// assuming refactored Ulna api
 			// we push to a children array for convenient references
@@ -1962,8 +1962,10 @@ var extend = require('./extend.js');
 
 Component = function(obj) {
 	this.type = 'component';
+	this.eventsBound = false;
 	this.children = [];
 	this.normalized = null;
+	this.$root = [];
 
 	for (var prop in obj) {
 		this[prop] = obj[prop];
@@ -1980,69 +1982,42 @@ Component = function(obj) {
 
 methods = {
 	initialize: function() {
-		// reset children
-		if (this.children.length) {
-			this.deinitializeChildren();
-		}
-
+		// fires on construction
 		this.normalized = this.normalize( this.template );	
 		this.stringified = this.stringify.normalized( this.normalized );
-
-		if (Ulna.env === 'browser') {
-			this.$root = $(this.root);
-
-			if (this.events) {
-				this.bindEvents();	
-			}
-		}
-
-		// initialize children
-		if (this.children.length) {
-			this.initializeChildren();	
-		}
 	},
 
-	deinitialize: function() {
+	// DOM
+	bindToDOM: function() {
+		this.bindRoot();
+		this.bindEvents();
+
+		return this.eventsBound;
+	},
+
+	unbindFromDOM: function() {
+		this.unbindEvents();
+		this.unbindRoot();
+
+		return this.eventsBound;
+	},
+
+	bindRoot: function() {
+		this.$root = $(this.root);
+		
+		return this.$root;
+	},
+
+	unbindRoot: function() {
 		this.$root = [];
-		this.children = [];
-
-		if (Ulna.env === 'browser') {
-			this.unbindEvents();
-		}
+		
+		return this.$root;
 	},
 
-	initializeChildren: function() {
-		// bind their roots and events
-		for (var c = 0; this.children.length > c; c++) {
-			this.children[c].initialize();
-		}
-	},
-
-	deinitializeChildren: function() {
-		// bind their roots and events
-		for (var c = 0; this.children.length > c; c++) {
-			this.children[c].deinitialize();
-		}
-
-		this.children = [];
-	},
-
-	renderChildren: function() {
-		// bind their roots and events
-		for (var c = 0; this.children.length > c; c++) {
-			this.children[c].render();
-		}
-	},
-
-	bindListen: function() {
-		// backbone-style hashes for flux-style action configuration
-		for (var action in this.listen) {
-			this.dispatcher.register(action, this, this.listen[action].bind(this));
-		}
-	},
-
-	bindEvents: function(events) {
+	bindEvents: function() {
 		// backbone-style hash pairs for easy event config
+		this.eventsBound = true;
+
 		for (var key in this.events) {
 			var culledKey = this.cullEventKey(key);
 
@@ -2055,10 +2030,13 @@ methods = {
 			}
 		}
 
+		return this.eventsBound;
 	},
 
-	unbindEvents: function(events) {
-		for (var key in events) {
+	unbindEvents: function() {
+		this.eventsBound = false;
+
+		for (var key in this.events) {
 			var culledKey = this.cullEventKey(key);
 
 			// shortcut to just binding the root
@@ -2069,6 +2047,8 @@ methods = {
 				this.$root.find(culledKey[1]).off(culledKey[0]);
 			}
 		}
+
+		return this.eventsBound;
 	},
 
 	cullEventKey: function(key) {
@@ -2079,27 +2059,69 @@ methods = {
 		return [eventString, selector];
 	},
 
-	stringifyTemplate: function() {
-		return this.stringify.normalized( this.normalize( this.template ) )
+	render: function() {
+		return this.stringify.normalized( this.normalized );
 	},
 
-	render: function() {
-		// side effect of normalizing
-		// we push children in normalize
-		// have to reset each time
-		if (this.children.length) {
-			this.deinitializeChildren();	
+	renderToDOM: function() {
+		this.$root.html( this.render() );
+
+		return this.$root;
+	},
+
+	unrenderFromDOM: function() {
+		this.$root.empty();
+
+		return this.$root;
+	},
+
+	// FLUX
+	bindListen: function() {
+		// backbone-style hashes for flux-style action configuration
+		for (var action in this.listen) {
+			this.dispatcher.register(action, this, this.listen[action].bind(this));
+		}
+	},
+
+	// CHILDREN
+	bindChildren: function() {
+		if (!this.children.length) return false;
+
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].bindToDOM();
 		}
 
-		if (!this.$root.length) {
-			this.initialize();
+		return this.children;
+	},
+
+	unbindChildren: function() {
+		if (!this.children.length) return false;
+
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].unbindFromDOM();
 		}
 
-		this.$root.html( this.stringifyTemplate() );
+		return this.children;
+	},
 
-		if (this.children.length) {
-			this.initializeChildren();
-		}
+	renderChildrenToDOM: function() {
+		if (!this.children.length) return false;
+
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].bindRoot();
+			this.children[c].renderToDOM();
+			this.children[c].bindEvents();
+		}		
+	},
+
+	unrenderChildrenFromDOM: function() {
+		if (!this.children.length) return false;
+
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].unbindEvents();
+			this.children[c].unrenderFromDOM();
+			this.children[c].unbindRoot();
+		}		
 	}
 }
 
