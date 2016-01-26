@@ -9,3 +9,5 @@ if (typeof window === 'undefined') {
 Ulna.extend = require('./src/extend.js');
 Ulna.Dispatcher = require('./src/Dispatcher.js');
 Ulna.Component = require('./src/Component.js');
+
+module.exports = Ulna;

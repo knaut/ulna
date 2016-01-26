@@ -10,6 +10,8 @@ if (typeof window === 'undefined') {
 Ulna.extend = require('./src/extend.js');
 Ulna.Dispatcher = require('./src/Dispatcher.js');
 Ulna.Component = require('./src/Component.js');
+
+module.exports = Ulna;
 },{"./src/Component.js":8,"./src/Dispatcher.js":9,"./src/extend.js":11}],2:[function(require,module,exports){
 nerve = {};
 nerve.type = 'nerve';
@@ -93,6 +95,11 @@ module.exports = function(struct) {
 
 			// for components we push a parent reference
 			struct['parent'] = this;
+
+			// nested components on first load won't be normalized
+			if (!struct.normalized) {
+				struct.normalized = this.normalize( struct.template );
+			}
 
 			// assuming refactored Ulna api
 			// we push to a children array for convenient references
@@ -1961,23 +1968,69 @@ Component = function(obj) {
 	for (var prop in obj) {
 		this[prop] = obj[prop];
 	}
-
-	this.initialize.apply(this, arguments);
+	
+	this.initialize.call(this)
 
 	// we bind dispatcher listeners on construction.
 	// we use initialize/deinitialize for dom-related setup and teardown
-	this.bindListen();
+	if (this.listen) {
+		this.bindListen();	
+	}
 }
 
 methods = {
 	initialize: function() {
+		// reset children
+		if (this.children.length) {
+			this.deinitializeChildren();
+		}
+
 		this.normalized = this.normalize( this.template );	
 		this.stringified = this.stringify.normalized( this.normalized );
 
 		if (Ulna.env === 'browser') {
-			this.bindEvents();
-
 			this.$root = $(this.root);
+
+			if (this.events) {
+				this.bindEvents();	
+			}
+		}
+
+		// initialize children
+		if (this.children.length) {
+			this.initializeChildren();	
+		}
+	},
+
+	deinitialize: function() {
+		this.$root = [];
+		this.children = [];
+
+		if (Ulna.env === 'browser') {
+			this.unbindEvents();
+		}
+	},
+
+	initializeChildren: function() {
+		// bind their roots and events
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].initialize();
+		}
+	},
+
+	deinitializeChildren: function() {
+		// bind their roots and events
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].deinitialize();
+		}
+
+		this.children = [];
+	},
+
+	renderChildren: function() {
+		// bind their roots and events
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].render();
 		}
 	},
 
@@ -1989,7 +2042,6 @@ methods = {
 	},
 
 	bindEvents: function(events) {
-
 		// backbone-style hash pairs for easy event config
 		for (var key in this.events) {
 			var culledKey = this.cullEventKey(key);
@@ -2002,6 +2054,7 @@ methods = {
 				this.$root.find(culledKey[1]).on(culledKey[0], this.events[key].bind(this));
 			}
 		}
+
 	},
 
 	unbindEvents: function(events) {
@@ -2015,7 +2068,6 @@ methods = {
 			} else {
 				this.$root.find(culledKey[1]).off(culledKey[0]);
 			}
-
 		}
 	},
 
@@ -2026,6 +2078,29 @@ methods = {
 
 		return [eventString, selector];
 	},
+
+	stringifyTemplate: function() {
+		return this.stringify.normalized( this.normalize( this.template ) )
+	},
+
+	render: function() {
+		// side effect of normalizing
+		// we push children in normalize
+		// have to reset each time
+		if (this.children.length) {
+			this.deinitializeChildren();	
+		}
+
+		if (!this.$root.length) {
+			this.initialize();
+		}
+
+		this.$root.html( this.stringifyTemplate() );
+
+		if (this.children.length) {
+			this.initializeChildren();
+		}
+	}
 }
 
 // we need to use the nerve object like a mixin
