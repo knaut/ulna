@@ -12,7 +12,7 @@ Ulna.Dispatcher = require('./src/Dispatcher.js');
 Ulna.Component = require('./src/Component.js');
 
 module.exports = Ulna;
-},{"./src/Component.js":8,"./src/Dispatcher.js":9,"./src/extend.js":11}],2:[function(require,module,exports){
+},{"./src/Component.js":9,"./src/Dispatcher.js":10,"./src/extend.js":12}],2:[function(require,module,exports){
 nerve = {};
 nerve.type = 'nerve';
 
@@ -22,12 +22,41 @@ nerve.parse.css = require('./modules/parse/css.js');
 nerve.toType = require('./modules/toType.js')
 nerve.normalize = require('./modules/normalize.js');
 nerve.stringify = require('./modules/stringify.js');
+nerve.interpolate = require('./modules/interpolate.js');
 
 module.exports = nerve;
-},{"./modules/normalize.js":3,"./modules/parse/css.js":4,"./modules/stringify.js":5,"./modules/toType.js":6}],3:[function(require,module,exports){
+},{"./modules/interpolate.js":3,"./modules/normalize.js":4,"./modules/parse/css.js":5,"./modules/stringify.js":6,"./modules/toType.js":7}],3:[function(require,module,exports){
+module.exports = function(key) {
+	// extract stringified refs based on a custom syntax
+	var reg = /\<\<([a-zA-Z|\.]*)\>\>/g;
+	var arr = key.match(reg);
+
+	// loop through the references
+	for (var a = 0; arr.length > a; a++) {
+
+		// better regexing, or passing a handler to replace, might save us this cleanup dance
+		var ref = arr[a].replace(/[\<*|\>*]/g, '');
+
+		// we could eval here
+		// instead we'll construct a custom function that only returns based on type (for security concerns)
+		// then we'll call that in the context of the current object we're mixed into
+		var interpolatedRef = (new Function(
+			// only strings and numbers should be acceptable as references
+			'if (typeof ' + ref + ' === \'string\' || typeof ' + ref + ' === \'number\') { ' +
+				'return ' + ref +
+			'} else {' +
+				'throw new Error("Bad reference encountered while interpolating template:", ' + ref + ');' +
+			'}')).call(this);
+
+		// replace each found reference in our array with its interpolated equivalent
+		key = key.replace(arr[a], interpolatedRef)
+	}
+
+	return key;
+}
+},{}],4:[function(require,module,exports){
 module.exports = function(struct) {
 	var normalized = [];
-
 	switch (this.toType(struct)) {
 		case 'string':
 			return struct;
@@ -36,26 +65,31 @@ module.exports = function(struct) {
 			return struct;
 			break;
 		case 'array':
-
 			// for component based library (Ulna), check if we're mixed into the component
-			// prototype, and depend on its api
+			// prototype, and assume on its api
+
 			if (this.type === 'component') {
 				// this is uninintuitive but works because of recursion
-				// when we loop, we push to the normalized struct (component's) children	
+				// when we loop, we push to the normalized struct (component's) children
 				for (var x = 0; struct.length > x; x++) {
-					normalized.push = this.normalize(struct[x]);
+					normalized.push( this.normalize(struct[x])[0] );	// normalized always returns an array
 				}
 
 				// by setting normalized to the struct, we return the array for normalized templates
-				normalized = struct;
+				// normalized = struct;
+
 			} else {
+				
 				// code where we assume every array holds another nerve template object
-				// still want to test
 				for (var i = 0; struct.length > i; i++) {
 
 					var obj = struct[i];
 
 					for (var key in obj) {
+
+						// check for interpolated keys
+						key = this.interpolate( key );
+
 						var parsed = this.parse.css.selector(key);
 						parsed.inner = this.normalize(obj[key]);
 					}
@@ -76,8 +110,25 @@ module.exports = function(struct) {
 				obj[key] = val;
 
 				for (var keyS in obj) {
-					var parsed = this.parse.css.selector(keyS);
-					parsed.inner = this.normalize(struct[keyS]);
+
+					// check for interpolatable keys
+					if (key.indexOf('<<') > -1 && key.indexOf('>>') > -1) {
+
+						var interpObj = {};
+						var interpolatedKey = this.interpolate( keyS );
+						
+						interpObj[interpolatedKey] = obj[keyS];
+
+						Object.defineProperty( obj, keyS, interpObj);
+
+						var parsed = this.parse.css.selector(interpolatedKey);
+						parsed.inner = this.normalize(interpObj[interpolatedKey]);
+					} else {
+
+						var parsed = this.parse.css.selector(keyS);
+						parsed.inner = this.normalize(struct[keyS]);
+					}
+					
 				}
 
 				normalized.push(parsed);
@@ -91,6 +142,8 @@ module.exports = function(struct) {
 
 			// we call this as the current context, assuming that this is a component
 			normalized = this.normalize(struct.call(this));
+
+			// console.log(normalized, struct.call(this));
 
 			break;
 		case 'component':
@@ -114,7 +167,7 @@ module.exports = function(struct) {
 
 	return normalized;
 }
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 module.exports = {
 	selector: function(string) {
 		// parse a CSS selector and normalize it as a a JS object
@@ -268,12 +321,11 @@ module.exports = {
 		return parsed;
 	}
 }
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports = {
 	normalized: function(normalized) {
 		// let one do function do one thing:
 		// take a normalized structure and recursively stringify it
-
 		var string = '';
 		for (var n = 0; normalized.length > n; n++) {
 			var normalizedType = nerve.toType(normalized[n]);
@@ -285,6 +337,8 @@ module.exports = {
 				case 'component':
 					// seriously
 					string += this.normalized( normalized[n].normalized );
+					break;
+				case 'array':
 					break;
 			}
 		}
@@ -356,7 +410,7 @@ module.exports = {
 		return string;
 	}
 }
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports = function(obj) {
 	// better type checking
 	// https://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/
@@ -366,7 +420,7 @@ module.exports = function(obj) {
 		return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
 	}
 }
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -1916,7 +1970,7 @@ module.exports = function(obj) {
   }
 }.call(this));
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var _ = require('underscore');
 var nerve = require('nerve-templates');
 var extend = require('./extend.js');
@@ -1950,7 +2004,12 @@ methods = {
 
 	// DOM
 	bindRoot: function() {
-		this.$root = $(this.root);
+		if (this.root.indexOf('<<') > -1 && this.root.indexOf('>>') > -1) {
+			this.$root = $( this.interpolate( this.root) );
+		} else {
+			this.$root = $(this.root);
+		}
+
 		
 		return this.$root;
 	},
@@ -2051,6 +2110,13 @@ methods = {
 		return this.$root;
 	},
 
+	bind: function() {
+		this.bindToDOM();
+		this.bindDescendants();
+
+		return this.eventsBound;
+	},
+
 	// FLUX
 	bindListen: function() {
 		// backbone-style hashes for flux-style action configuration
@@ -2088,6 +2154,7 @@ methods = {
 
 		for (var c = 0; this.children.length > c; c++) {
 			this.children[c].bindToDOM();
+			// console.log(this)
 		}
 
 		return this.children;
@@ -2125,6 +2192,14 @@ methods = {
 		}
 
 		return this.$root;
+	},
+
+	bindDescendants: function() {
+		if (!this.children.length) return false;
+
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].bind()
+		}
 	}
 }
 
@@ -2140,7 +2215,7 @@ _.extend(Component.prototype, methods);
 Component.extend = extend;
 
 module.exports = Component;
-},{"./extend.js":11,"nerve-templates":2,"underscore":7}],9:[function(require,module,exports){
+},{"./extend.js":12,"nerve-templates":2,"underscore":8}],10:[function(require,module,exports){
 var underscore = require('underscore');
 var Events = require('./events.js');
 
@@ -2278,7 +2353,7 @@ Dispatcher.prototype = {
 };
 
 module.exports = Dispatcher;
-},{"./events.js":10,"underscore":7}],10:[function(require,module,exports){
+},{"./events.js":11,"underscore":8}],11:[function(require,module,exports){
 var Events = (function() {
 	// Events, stolen from Backbone
 	// only needed for Dispatcher at this point
@@ -2578,7 +2653,7 @@ var Events = (function() {
 	module.exports = Events;
 
 })();
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var _ = require('underscore');
 
 module.exports = function(protoProps, staticProps) {
@@ -2610,4 +2685,4 @@ module.exports = function(protoProps, staticProps) {
 
 	return child;
 };
-},{"underscore":7}]},{},[1]);
+},{"underscore":8}]},{},[1]);

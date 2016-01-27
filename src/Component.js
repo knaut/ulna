@@ -31,7 +31,12 @@ methods = {
 
 	// DOM
 	bindRoot: function() {
-		this.$root = $(this.root);
+		if (this.root.indexOf('<<') > -1 && this.root.indexOf('>>') > -1) {
+			this.$root = $( this.interpolate( this.root) );
+		} else {
+			this.$root = $(this.root);
+		}
+
 		
 		return this.$root;
 	},
@@ -132,6 +137,13 @@ methods = {
 		return this.$root;
 	},
 
+	bind: function() {
+		this.bindToDOM();
+		this.bindDescendants();
+
+		return this.eventsBound;
+	},
+
 	// FLUX
 	bindListen: function() {
 		// backbone-style hashes for flux-style action configuration
@@ -169,6 +181,7 @@ methods = {
 
 		for (var c = 0; this.children.length > c; c++) {
 			this.children[c].bindToDOM();
+			// console.log(this)
 		}
 
 		return this.children;
@@ -206,6 +219,14 @@ methods = {
 		}
 
 		return this.$root;
+	},
+
+	bindDescendants: function() {
+		if (!this.children.length) return false;
+
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].bind()
+		}
 	}
 }
 
