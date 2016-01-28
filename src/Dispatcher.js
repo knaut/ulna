@@ -1,5 +1,6 @@
 var underscore = require('underscore');
 var Events = require('./events.js');
+var extend = require('./extend.js');
 
 var Dispatcher = function(options) {
 	if (options && options.actions) {
@@ -133,5 +134,7 @@ Dispatcher.prototype = {
 		this._actions.trigger(actionName, payload);
 	}
 };
+
+Dispatcher.extend = extend;
 
 module.exports = Dispatcher;
