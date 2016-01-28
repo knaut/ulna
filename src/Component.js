@@ -1,5 +1,5 @@
 var _ = require('underscore');
-var nerve = require('nerve-templates');
+var nerve = require('../../nerveTemplates/core.js');
 var extend = require('./extend.js');
 
 Component = function(obj) {
@@ -22,7 +22,7 @@ Component = function(obj) {
 	}
 }
 
-methods = {
+var methods = {
 	initialize: function() {
 		// fires on construction
 		this.normalized = this.normalize( this.template );	
@@ -36,8 +36,6 @@ methods = {
 		} else {
 			this.$root = $(this.root);
 		}
-
-		
 		return this.$root;
 	},
 
@@ -144,6 +142,13 @@ methods = {
 		return this.eventsBound;
 	},
 
+	unbind: function() {
+		this.unbindFromDOM();
+		this.unbindDescendants();
+
+		return this.eventsBound;
+	},
+
 	// FLUX
 	bindListen: function() {
 		// backbone-style hashes for flux-style action configuration
@@ -181,7 +186,6 @@ methods = {
 
 		for (var c = 0; this.children.length > c; c++) {
 			this.children[c].bindToDOM();
-			// console.log(this)
 		}
 
 		return this.children;
@@ -225,7 +229,15 @@ methods = {
 		if (!this.children.length) return false;
 
 		for (var c = 0; this.children.length > c; c++) {
-			this.children[c].bind()
+			this.children[c].bind();
+		}
+	},
+
+	unbindDescendants: function() {
+		if (!this.children.length) return false;
+
+		for (var c = 0; this.children.length > c; c++) {
+			this.children[c].unbind();
 		}
 	}
 }
