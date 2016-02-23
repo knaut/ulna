@@ -2,7 +2,7 @@ var _ = require('underscore');
 var nerve = require('../../nerveTemplates/core.js');
 var extend = require('./extend.js');
 
-Component = function(obj) {
+var Component = function(obj) {
 	this.type = 'component';
 	this.eventsBound = false;
 	this.children = [];
@@ -13,7 +13,7 @@ Component = function(obj) {
 		this[prop] = obj[prop];
 	}
 	
-	this.initialize.call(this)
+	this.initialize.call(this);
 
 	// we bind dispatcher listeners on construction.
 	// we use initialize/deinitialize for dom-related setup and teardown
@@ -31,11 +31,26 @@ var methods = {
 
 	// DOM
 	bindRoot: function() {
+		
 		if (this.root.indexOf('<<') > -1 && this.root.indexOf('>>') > -1) {
-			this.$root = $( this.interpolate( this.root) );
+		
+			if (typeof this.parent !== 'undefined') {
+				this.$root = this.parent.$root.find( $( this.interpolate( this.root) ) );
+			} else {
+				this.$root = $( this.interpolate( this.root) );
+			}
+			
 		} else {
-			this.$root = $(this.root);
+
+			if (typeof this.parent !== 'undefined') {
+
+				this.$root = this.parent.$root.find( this.root );
+			} else {
+				this.$root = $(this.root);
+			}
 		}
+
+
 		return this.$root;
 	},
 
@@ -47,6 +62,8 @@ var methods = {
 
 	bindEvents: function() {
 		// backbone-style hash pairs for easy event config
+
+
 		this.eventsBound = true;
 
 		for (var key in this.events) {
@@ -65,6 +82,7 @@ var methods = {
 	},
 
 	unbindEvents: function() {
+		
 		this.eventsBound = false;
 
 		for (var key in this.events) {
@@ -122,15 +140,13 @@ var methods = {
 
 	rerender: function() {
 		// assume we are bound to the dom and recieved new data
-		// unbind, re-render template, then re-bind
-		this.unbindChildren();
-		this.unrenderChildrenFromDOM();
-
+		// unbind, reset children, re-render template, then re-bind
+		this.unbindEvents();
+		this.unbindDescendants();
+		this.children = [];
 		this.initialize();
-
 		this.renderToDOM();
-		this.bindEvents();
-		this.renderChildrenToDOM();
+		this.bind();
 
 		return this.$root;
 	},

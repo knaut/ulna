@@ -12,8 +12,14 @@ Ulna.Dispatcher = require('./src/Dispatcher.js');
 Ulna.Component = require('./src/Component.js');
 Ulna.Services = require('./src/Services.js');
 
+if (Ulna.env === 'browser') {
+	Ulna.Router = require('./src/Router.js');
+} else {
+	Ulna.Router = null;
+}
+
 module.exports = Ulna;
-},{"./src/Component.js":3,"./src/Dispatcher.js":4,"./src/Services.js":5,"./src/extend.js":7}],2:[function(require,module,exports){
+},{"./src/Component.js":3,"./src/Dispatcher.js":4,"./src/Router.js":5,"./src/Services.js":6,"./src/extend.js":8}],2:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -1568,7 +1574,7 @@ var _ = require('underscore');
 var nerve = require('../../nerveTemplates/core.js');
 var extend = require('./extend.js');
 
-Component = function(obj) {
+var Component = function(obj) {
 	this.type = 'component';
 	this.eventsBound = false;
 	this.children = [];
@@ -1579,7 +1585,7 @@ Component = function(obj) {
 		this[prop] = obj[prop];
 	}
 	
-	this.initialize.call(this)
+	this.initialize.call(this);
 
 	// we bind dispatcher listeners on construction.
 	// we use initialize/deinitialize for dom-related setup and teardown
@@ -1613,6 +1619,7 @@ var methods = {
 
 	bindEvents: function() {
 		// backbone-style hash pairs for easy event config
+		
 		this.eventsBound = true;
 
 		for (var key in this.events) {
@@ -1631,6 +1638,7 @@ var methods = {
 	},
 
 	unbindEvents: function() {
+		
 		this.eventsBound = false;
 
 		for (var key in this.events) {
@@ -1688,15 +1696,13 @@ var methods = {
 
 	rerender: function() {
 		// assume we are bound to the dom and recieved new data
-		// unbind, re-render template, then re-bind
-		this.unbindChildren();
-		this.unrenderChildrenFromDOM();
-
+		// unbind, reset children, re-render template, then re-bind
+		this.unbindEvents();
+		this.unbindDescendants();
+		this.children = [];
 		this.initialize();
-
 		this.renderToDOM();
-		this.bindEvents();
-		this.renderChildrenToDOM();
+		this.bind();
 
 		return this.$root;
 	},
@@ -1820,7 +1826,7 @@ _.extend(Component.prototype, methods);
 Component.extend = extend;
 
 module.exports = Component;
-},{"../../nerveTemplates/core.js":8,"./extend.js":7,"underscore":2}],4:[function(require,module,exports){
+},{"../../nerveTemplates/core.js":9,"./extend.js":8,"underscore":2}],4:[function(require,module,exports){
 var underscore = require('underscore');
 var Events = require('./events.js');
 var extend = require('./extend.js');
@@ -1961,7 +1967,59 @@ Dispatcher.prototype = {
 Dispatcher.extend = extend;
 
 module.exports = Dispatcher;
-},{"./events.js":6,"./extend.js":7,"underscore":2}],5:[function(require,module,exports){
+},{"./events.js":7,"./extend.js":8,"underscore":2}],5:[function(require,module,exports){
+var _ = require('underscore');
+var extend = require('./extend.js');
+
+var Router = function(obj) {
+	this.type = 'router';
+	this.eventsBound = false;
+	this.location = false;
+
+	for (var prop in obj) {
+		this[prop] = obj[prop];
+	}
+
+	if (this.listen) {
+		this.bindListen();	
+	}
+
+	this.initialize.call(this);
+}
+
+var methods = {
+	initialize: function() {
+		this.location = window.location.pathname;
+	},
+
+	// FLUX
+	bindListen: function() {
+		// backbone-style hashes for flux-style action configuration
+		for (var action in this.listen) {
+			this.dispatcher.register(action, this, this.listen[action].bind(this));
+		}
+	},
+
+	// HISTORY shorthand
+	history: {
+		push: function( obj ) {
+			document.title = obj.title;
+			history.pushState(obj, obj.title, obj.url);	
+		},
+		replace: function( obj ) {
+			document.title = obj.title;
+			history.replaceState(obj, obj.title, obj.url);
+		}
+	}
+};
+
+
+_.extend(Router.prototype, methods);
+
+Router.extend = extend;
+
+module.exports = Router;
+},{"./extend.js":8,"underscore":2}],6:[function(require,module,exports){
 var _ = require('underscore');
 var extend = require('./extend.js');
 
@@ -1979,19 +2037,13 @@ var Services = function(obj) {
 }
 
 var methods = {
-	cloneData: function( component ) {
+	cloneData: function() {
 		// accept a component as optional, otherwise clone whole state
 		var clone = {};
 
-		if ( component ) {
-			for (var prop in component.data) {
-				clone[prop] = component.data[prop];
-			}
-		} else {
-			for (var prop in this.data) {
-				clone[prop] = this.data[prop];
-			}	
-		}
+		for (var prop in this.data) {
+			clone[prop] = this.data[prop];
+		}			
 
 		return clone;
 	},
@@ -2007,12 +2059,12 @@ var methods = {
 	},
 
 	// FLUX
-	// bindListen: function() {
-	// 	// backbone-style hashes for flux-style action configuration
-	// 	for (var action in this.listen) {
-	// 		this.dispatcher.register(action, this, this.listen[action].bind(this));
-	// 	}
-	// }
+	bindListen: function() {
+		// backbone-style hashes for flux-style action configuration
+		for (var action in this.listen) {
+			this.dispatcher.register(action, this, this.listen[action].bind(this));
+		}
+	}
 }
 
 _.extend(Services.prototype, methods);
@@ -2020,7 +2072,7 @@ _.extend(Services.prototype, methods);
 Services.extend = extend;
 
 module.exports = Services;
-},{"./extend.js":7,"underscore":2}],6:[function(require,module,exports){
+},{"./extend.js":8,"underscore":2}],7:[function(require,module,exports){
 var Events = (function() {
 	// Events, stolen from Backbone
 	// only needed for Dispatcher at this point
@@ -2320,7 +2372,7 @@ var Events = (function() {
 	module.exports = Events;
 
 })();
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var _ = require('underscore');
 
 module.exports = function(protoProps, staticProps) {
@@ -2352,7 +2404,7 @@ module.exports = function(protoProps, staticProps) {
 
 	return child;
 };
-},{"underscore":2}],8:[function(require,module,exports){
+},{"underscore":2}],9:[function(require,module,exports){
 nerve = {};
 nerve.type = 'nerve';
 
@@ -2365,7 +2417,7 @@ nerve.stringify = require('./modules/stringify.js');
 nerve.interpolate = require('./modules/interpolate.js');
 
 module.exports = nerve;
-},{"./modules/interpolate.js":9,"./modules/normalize.js":10,"./modules/parse/css.js":11,"./modules/stringify.js":12,"./modules/toType.js":13}],9:[function(require,module,exports){
+},{"./modules/interpolate.js":10,"./modules/normalize.js":11,"./modules/parse/css.js":12,"./modules/stringify.js":13,"./modules/toType.js":14}],10:[function(require,module,exports){
 module.exports = function(key) {
 	// extract stringified refs based on a custom syntax
 	var reg = /\<\<([a-zA-Z|\.]*)\>\>/g;
@@ -2394,7 +2446,7 @@ module.exports = function(key) {
 
 	return key;
 }
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = function(struct) {
 	var normalized = [];
 	switch (this.toType(struct)) {
@@ -2507,7 +2559,7 @@ module.exports = function(struct) {
 
 	return normalized;
 }
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = {
 	selector: function(string) {
 		// parse a CSS selector and normalize it as a a JS object
@@ -2662,7 +2714,7 @@ module.exports = {
 		return parsed;
 	}
 }
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports = {
 	normalized: function(normalized) {
 		// let one do function do one thing:
@@ -2750,7 +2802,7 @@ module.exports = {
 		return string;
 	}
 }
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports = function(obj) {
 	// better type checking
 	// https://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/

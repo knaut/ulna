@@ -7,8 +7,15 @@ if (typeof window === 'undefined') {
 }
 
 Ulna.extend = require('./src/extend.js');
+Ulna.toType = require('./src/toType.js');
 Ulna.Dispatcher = require('./src/Dispatcher.js');
 Ulna.Component = require('./src/Component.js');
 Ulna.Services = require('./src/Services.js');
+
+if (Ulna.env === 'browser') {
+	Ulna.Router = require('./src/Router.js');
+} else {
+	Ulna.Router = null;
+}
 
 module.exports = Ulna;

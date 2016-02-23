@@ -12,22 +12,31 @@ var Services = function(obj) {
 	if (this.listen) {
 		this.bindListen();	
 	}
+
+	if (this.modifiers) {
+		this.bindModifiers();
+	}
 }
 
 var methods = {
-	cloneData: function( component ) {
+	cloneData: function() {
 		// accept a component as optional, otherwise clone whole state
 		var clone = {};
 
-		if ( component ) {
-			for (var prop in component.data) {
-				clone[prop] = component.data[prop];
-			}
-		} else {
-			for (var prop in this.data) {
-				clone[prop] = this.data[prop];
-			}	
-		}
+		for (var prop in this.data) {
+			clone[prop] = this.data[prop];
+		}			
+
+		return clone;
+	},
+
+	cloneState: function() {
+		// accept a component as optional, otherwise clone whole state
+		var clone = {};
+
+		for (var prop in this.state) {
+			clone[prop] = this.state[prop];
+		}			
 
 		return clone;
 	},
@@ -43,12 +52,19 @@ var methods = {
 	},
 
 	// FLUX
-	// bindListen: function() {
-	// 	// backbone-style hashes for flux-style action configuration
-	// 	for (var action in this.listen) {
-	// 		this.dispatcher.register(action, this, this.listen[action].bind(this));
-	// 	}
-	// }
+	bindListen: function() {
+		// backbone-style hashes for flux-style action configuration
+		for (var action in this.listen) {
+			this.dispatcher.register(action, this, this.listen[action].bind(this));
+		}
+	},
+
+	// MODIFIERS
+	bindModifiers: function() {
+		for (var func in this.modifiers) {
+			this.modifiers[func] = this.modifiers[func].bind(this)
+		}
+	}
 }
 
 _.extend(Services.prototype, methods);
