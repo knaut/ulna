@@ -215,10 +215,10 @@ Ulna is designed to be flexible and scrappy. 0.0.2 leaves more things up to the 
 For small, static sites that want the benefits of SEO and the single-page app experience, this is all that's necessary.
 
 ## Todo
-	* more robust router with normalization methods for route objects
-	* focus on pure, testable functions
-	* api for template mutations below the route
-	* api for updating services layer based on incoming AJAX requests, if needed
+* more robust router with normalization methods for route objects
+* focus on pure, testable functions
+* api for template mutations below the route
+* api for updating services layer based on incoming AJAX requests, if needed
 
 # Credits
 daniel anderson (knaut) - info@knaut.net, portfolio.knaut.net
